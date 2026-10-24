@@ -1,0 +1,14 @@
+node_modules/
+.next/
+dist/
+.turbo/
+generated/prisma/
+out/
+coverage/
+work/
+outputs/
+.env
+.env.*
+!.env.example
+npm-debug.log*
+*.tsbuildinfo

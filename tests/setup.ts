@@ -1,0 +1,1 @@
+if(process.env.TEST_DATABASE_URL){const url=new URL(process.env.TEST_DATABASE_URL);if(!url.pathname.toLowerCase().includes('test'))throw new Error('TEST_DATABASE_URL must point to a database whose name includes "test".');process.env.DATABASE_URL=process.env.TEST_DATABASE_URL;}

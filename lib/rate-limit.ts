@@ -1,0 +1,5 @@
+import {createHmac} from 'node:crypto';
+import {prisma} from '@/lib/prisma';
+import type {NextRequest} from 'next/server';
+export function abuseKey(req:NextRequest){const ip=req.headers.get('x-real-ip')||req.headers.get('x-forwarded-for')?.split(',')[0]?.trim()||'unknown';const secret=process.env.ABUSE_HASH_SECRET;if(!secret||secret.length<32)throw new Error('ABUSE_HASH_SECRET must contain at least 32 characters.');return createHmac('sha256',secret).update(ip).digest('hex');}
+export async function rateLimit(key:string,limit:number,windowSeconds:number){const windowMs=windowSeconds*1000;const now=new Date();const start=new Date(Math.floor(now.getTime()/windowMs)*windowMs);const rows=await prisma.$queryRaw<Array<{count:number}>>`INSERT INTO "RateLimitBucket" ("key","windowStart","count") VALUES (${key},${start},1) ON CONFLICT ("key") DO UPDATE SET "count"=CASE WHEN "RateLimitBucket"."windowStart"=${start} THEN "RateLimitBucket"."count"+1 ELSE 1 END,"windowStart"=${start} RETURNING "count"`;return (rows[0]?.count||0)<=limit;}

@@ -1,0 +1,51 @@
+{
+  "name": "roama-great-signal-quest",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "next dev",
+    "build": "npm run db:generate && next build",
+    "start": "next start",
+    "lint": "eslint .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run",
+    "db:generate": "prisma generate",
+    "db:migrate": "prisma migrate dev",
+    "db:deploy": "prisma migrate deploy",
+    "db:seed": "tsx prisma/seed.ts",
+    "admin:create": "tsx prisma/create-admin.ts",
+    "db:check": "tsx scripts/db-check.ts",
+    "db:maintenance": "tsx scripts/privacy-maintenance.ts"
+  },
+  "dependencies": {
+    "@prisma/client": "^7.10.1",
+    "bcryptjs": "^3.0.2",
+    "dotenv": "^16.4.7",
+    "next": "^16.4.3",
+    "react": "^19.2.3",
+    "react-dom": "^19.2.3",
+    "zod": "^4.6.7",
+    "@prisma/adapter-pg": "^7.10.1",
+    "pg": "^8.16.3"
+  },
+  "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/node": "^22.13.10",
+    "@types/react": "^19.2.0",
+    "@types/react-dom": "^19.2.0",
+    "eslint": "^9.39.5",
+    "eslint-config-next": "^16.4.3",
+    "prisma": "^7.10.1",
+    "tsx": "^4.19.3",
+    "typescript": "^5.9.3",
+    "vitest": "^4.1.12",
+    "@types/pg": "^8.15.5"
+  },
+  "allowScripts": {
+    "esbuild@0.28.2": true,
+    "unrs-resolver@1.12.2": true,
+    "prisma@7.10.1": true,
+    "@prisma/engines@7.10.1": true
+  }
+}

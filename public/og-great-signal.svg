@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
+  <title id="title">A Million Stars. One Global Quest.</title>
+  <desc id="desc">The Great Signal Quest by ROAMA Kids</desc>
+  <defs>
+    <radialGradient id="glow"><stop stop-color="#e7c374" stop-opacity=".24"/><stop offset="1" stop-color="#0b1426" stop-opacity="0"/></radialGradient>
+    <linearGradient id="line"><stop stop-color="#e7c374" stop-opacity=".18"/><stop offset=".5" stop-color="#e7c374" stop-opacity=".65"/><stop offset="1" stop-color="#e7c374" stop-opacity=".15"/></linearGradient>
+  </defs>
+  <rect width="1200" height="630" fill="#0b1426"/>
+  <circle cx="830" cy="255" r="330" fill="url(#glow)"/>
+  <path d="M705 365 825 235 930 290 1010 165 1090 220" fill="none" stroke="url(#line)" stroke-width="2"/>
+  <g fill="#ffe5a2"><circle cx="705" cy="365" r="4"/><circle cx="825" cy="235" r="5"/><circle cx="930" cy="290" r="3"/><circle cx="1010" cy="165" r="5"/><circle cx="1090" cy="220" r="4"/></g>
+  <g fill="#f4d58e" opacity=".75"><circle cx="785" cy="120" r="2"/><circle cx="1137" cy="370" r="2"/><circle cx="971" cy="435" r="2"/><circle cx="740" cy="472" r="2"/><circle cx="1085" cy="90" r="2"/></g>
+  <text x="92" y="110" fill="#e7c374" font-family="Arial,sans-serif" font-size="17" letter-spacing="5">ROAMA KIDS · THE GREAT SIGNAL QUEST</text>
+  <text x="88" y="285" fill="#f5f0e6" font-family="Georgia,serif" font-size="76">A million stars.</text>
+  <text x="88" y="375" fill="#e7c374" font-family="Georgia,serif" font-size="76" font-style="italic">One global quest.</text>
+  <text x="93" y="453" fill="#c2c9d3" font-family="Arial,sans-serif" font-size="22">Complete a challenge. Add your star. Help build something bigger.</text>
+  <rect x="92" y="515" width="104" height="3" fill="#e7c374"/>
+</svg>

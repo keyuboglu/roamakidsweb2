@@ -1,0 +1,3 @@
+import 'dotenv/config';import {prisma} from '../lib/prisma';
+async function main(){const [oldHashes,oldBuckets]=await prisma.$transaction([prisma.completion.updateMany({where:{registeredAt:{lt:new Date(Date.now()-30*86400000)},abuseKey:{not:null}},data:{abuseKey:null}}),prisma.rateLimitBucket.deleteMany({where:{windowStart:{lt:new Date(Date.now()-86400000)}}})]);console.log(`Removed ${oldHashes.count} old abuse hashes and ${oldBuckets.count} expired rate-limit buckets.`);}
+main().catch(()=>{console.error('Privacy maintenance failed. Check DATABASE_URL and database access.');process.exitCode=1;}).finally(()=>prisma.$disconnect());

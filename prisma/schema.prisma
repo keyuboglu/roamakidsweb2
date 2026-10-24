@@ -1,0 +1,109 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum ChallengeStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+enum CompletionStatus {
+  ACCEPTED
+  REJECTED
+}
+
+enum AnalyticsEventType {
+  PAGE_VIEW
+  CHALLENGE_VIEW
+  COMPLETION_STARTED
+  COMPLETION_ACCEPTED
+  SHARE
+  STORE_CLICK
+}
+
+model Challenge {
+  id               String           @id @default(cuid())
+  slug             String           @unique
+  title            String
+  shortDescription String           @db.VarChar(300)
+  description      String           @default("") @db.Text
+  instructions     String           @default("") @db.Text
+  safety           String           @default("") @db.Text
+  imageUrl         String?          @db.Text
+  duration         String?
+  status           ChallengeStatus  @default(DRAFT)
+  displayOrder     Int              @default(0)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  publishedAt      DateTime?
+  completions      Completion[]
+  events           AnalyticsEvent[]
+
+  @@index([status, displayOrder])
+}
+
+model Completion {
+  id             String           @id @default(cuid())
+  challengeId    String
+  challenge      Challenge        @relation(fields: [challengeId], references: [id], onDelete: Restrict)
+  status         CompletionStatus @default(ACCEPTED)
+  registeredAt   DateTime         @default(now())
+  countryCode    String?          @db.Char(2)
+  idempotencyKey String           @unique @db.VarChar(80)
+  abuseKey       String?          @db.VarChar(64)
+
+  @@index([status, registeredAt])
+  @@index([challengeId, status])
+  @@index([abuseKey, registeredAt])
+}
+
+model CampaignConfig {
+  id              Int      @id @default(1)
+  title           String   @default("The Great Signal Quest")
+  headline        String   @default("A million stars. One global quest.")
+  description     String   @default("Complete a challenge. Add your star. Help build something bigger than a game.") @db.Text
+  goal            Int      @default(1000000)
+  milestones      Json     @default("[{\"threshold\":100,\"label\":\"First light\"},{\"threshold\":1000,\"label\":\"A brighter sky\"},{\"threshold\":10000,\"label\":\"A constellation\"},{\"threshold\":100000,\"label\":\"A world of stars\"},{\"threshold\":1000000,\"label\":\"The Great Signal\"}]")
+  iosStoreUrl     String?  @db.Text
+  androidStoreUrl String?  @db.Text
+  socialImageUrl  String?  @db.Text
+  published       Boolean  @default(false)
+  updatedAt       DateTime @updatedAt
+}
+
+model AdminUser {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  createdAt    DateTime  @default(now())
+  lastLoginAt  DateTime?
+}
+
+model AnalyticsEvent {
+  id          String             @id @default(cuid())
+  type        AnalyticsEventType
+  challengeId String?
+  challenge   Challenge?         @relation(fields: [challengeId], references: [id], onDelete: SetNull)
+  source      String?            @db.VarChar(100)
+  medium      String?            @db.VarChar(100)
+  campaign    String?            @db.VarChar(100)
+  target      String?            @db.VarChar(20)
+  createdAt   DateTime           @default(now())
+
+  @@index([type, createdAt])
+  @@index([challengeId, type, createdAt])
+}
+
+model RateLimitBucket {
+  key         String   @id @db.VarChar(64)
+  windowStart DateTime
+  count       Int      @default(0)
+
+  @@index([windowStart])
+}

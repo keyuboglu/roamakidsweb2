@@ -1,0 +1,3 @@
+import 'dotenv/config';import bcrypt from 'bcryptjs';import {prisma} from '../lib/prisma';
+async function main(){const email=process.env.ADMIN_EMAIL?.trim().toLowerCase(),password=process.env.ADMIN_PASSWORD;if(!email||!password||password.length<14)throw new Error('Set ADMIN_EMAIL and ADMIN_PASSWORD (at least 14 characters) in your private environment before running npm run admin:create.');const passwordHash=await bcrypt.hash(password,12);await prisma.adminUser.upsert({where:{email},create:{email,passwordHash},update:{passwordHash}});console.log(`Admin account initialized for ${email}.`);}
+main().finally(()=>prisma.$disconnect());
