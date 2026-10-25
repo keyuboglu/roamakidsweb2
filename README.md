@@ -6,13 +6,22 @@ An adult-organized global challenge platform built with Next.js, TypeScript, Pos
 
 - Next.js App Router renders the public campaign and challenge pages.
 - Prisma is the PostgreSQL access layer; versioned SQL lives in `prisma/migrations/`.
-- Admin passwords are bcrypt hashes. Admin sessions are signed, eight-hour, HttpOnly cookies (`Secure` in production, `SameSite=Strict`). All admin API handlers re-check that the account still exists.
+- Admin passwords are bcrypt hashes. Verification uses PostgreSQL `pgcrypto` so bcrypt work does not consume Workers Free request CPU. The database must permit this extension (Neon supports it); migrations enable it. Admin sessions are signed, eight-hour, HttpOnly cookies (`Secure` in production, `SameSite=Strict`). All admin API handlers re-check that the account still exists.
 - Registrations are idempotent via a client-generated random UUID retained for retry, with unique database constraint, challenge publication validation, server-side adult confirmation, transaction-safe completion + analytics insert, and authoritative count query.
-- PostgreSQL-backed request buckets throttle registration (30 per network key per hour), admin login (8 per 15 minutes), and analytics (80 per hour). Network addresses are HMACed with `ABUSE_HASH_SECRET`; no raw address is stored. A scheduled cleanup should clear abuse hashes after 30 days and expired rate buckets after 24 hours.
+- PostgreSQL-backed request buckets throttle registration (30 per network key per hour), admin login (8 per 15 minutes), and analytics (80 per hour). Network addresses are HMACed with `ABUSE_HASH_SECRET`; no raw address is stored. Bucket keys allow the operation prefix plus the full 64-character hash. Cloudflare schedules cleanup of abuse hashes after 30 days and expired rate buckets after 24 hours.
 - First-party analytics store event, optional published challenge, UTM source/medium/campaign, and app-store target only. No child identity is collected.
 - The founder dashboard at `/admin` manages challenges and campaign content, targets, milestones, store URLs, and aggregate reports. CSV export contains aggregate challenge totals.
 
-There were no official ROAMA image assets or verified store listings in the supplied workspace. The UI uses original CSS/SVG constellation art and shows no app-store button until an administrator configures real listing URLs. No founder challenge tasks or participation data are seeded.
+The ROAMA Kids fox logo was supplied directly by the owner. The shared brand component uses an optimized local WebP, with separate PNG browser and Apple touch icons derived from the same artwork. It replaces the temporary favicon taken from [roama.tech](https://roama.tech). The iOS App Store destination was verified against that official site; the default is `https://apps.apple.com/app/roama-kids/id6815158079`. The UI also retains its original constellation art. No founder challenge tasks or participation data are seeded.
+
+## Million-star sky and public names
+
+- `/stars` is a separate, zoomable/pannable map with exactly **1,000 × 1,000** stable star positions. An initial 2,000 × 2,000 pixel texture contains exactly one million distinct star pixels; the browser does not create a million DOM elements. An overview shows regional density and recent discoveries, with enlarged glints from actual unlit positions to keep the sky legible below pixel resolution. Zooming in draws individual stars rather than enlarged square pixels and loads the visible regions. Buttons, keyboard panning, and star-number lookup are available alongside pointer navigation. Camera bounds keep the sky in view, including near the first and last stars.
+- Only an accepted, adult-confirmed challenge completion lights a star. Empty positions are not fabricated participation. Each new completion receives a unique permanent number from a transactional counter; retries and conflicts roll back that reservation. The sky accepts at most **1,000,000** stars. Existing completions receive stable numbers in migration order.
+- A fictional star name is optional (40 characters maximum). Named submissions require explicit public-name acknowledgement as well as adult completion confirmation. URLs, email addresses, markup, and long numeric identifiers are rejected. Input checks cannot identify every real name or inappropriate word: the interface prohibits personal details, but names appear immediately without pre-publication moderation at the owner's request.
+- Both the home-page dialog and challenge-detail page use the same completion form, including preserved retry keys and a direct `Find my star` link. The home dialog supports Escape, focus containment, focus restoration, and independent form state when reopened.
+- Public `/api/stars` returns at most 400 regional counts and 500 recent stars. Individual 50 × 50 regions return at most 2,500 public `{starNumber, starName}` records. The browser fetches at most four regions concurrently and retains at most 32 regions, not every completion. Star data refreshes approximately every 30 seconds.
+- Authenticated `/admin` → **Star names** lists named stars in pages of 50 and can remove a public name without deleting the completion or changing its number/count. The owner still needs a published removal/contact procedure and final privacy review before promotion.
 
 ## Requirements
 
@@ -86,7 +95,7 @@ Run privacy cleanup daily from a trusted scheduled job:
 npm run db:maintenance
 ```
 
-It removes HMAC abuse hashes older than 30 days and rate-limit bucket keys older than 24 hours. The operator must schedule it; the app does not schedule background jobs itself. Back up PostgreSQL on the provider’s supported schedule, encrypt backups, and periodically test restore into a separate database. Never point integration tests at production.
+It removes HMAC abuse hashes older than 30 days and rate-limit bucket keys older than 24 hours. Cloudflare deployments schedule equivalent SQL daily at 03:00 UTC through the Worker cron trigger; verify successful executions in Workers Logs. Other hosting providers still require an external schedule. Back up PostgreSQL on the provider’s supported schedule, encrypt backups, and periodically test restore into a separate database. Never point integration tests at production.
 
 ## Checks and tests
 
@@ -105,9 +114,41 @@ DATABASE_URL='postgresql://roama:roama_local_dev@localhost:5432/roama_test?schem
 TEST_DATABASE_URL='postgresql://roama:roama_local_dev@localhost:5432/roama_test?schema=public' npm test
 ```
 
-The suite checks accepted registration increments, sequential and simultaneous retry idempotency, concurrent distinct registrations, draft rejection, and database-backed rate limits. Tests create and remove only their own uniquely named fixture records. Session signing, cookie flags, tamper rejection, and origin validation run without a database.
+The suite checks accepted registration increments, sequential and simultaneous retry idempotency, concurrent distinct registrations, unique permanent star numbers, the million-star cap, name consent/validation, bounded public API responses, authenticated same-origin name removal, draft rejection, and database-backed rate limits. The bitmap and tile-partition tests verify exactly one million distinct positions, not a sampled or decorative approximation. Tests create and remove only their own uniquely named fixture records. Session signing, cookie flags, tamper rejection, and origin validation run without a database.
 
-## Free hosting path (strict $0/month)
+## Cloudflare Workers Free + Neon Free
+
+The app includes an OpenNext Cloudflare build and a daily privacy-cleanup trigger. The configuration provisions no R2, Images, or paid domain. A free `workers.dev` hostname is sufficient. **The current deployment is a preview, not a verified fit for Workers Free CPU limits.**
+
+1. Create a **Neon Free** project. Save its pooled PostgreSQL URL in an ignored local `.env` as `DATABASE_URL`. Do not paste credentials into chat, commit them, or put them in `wrangler.jsonc`.
+2. Generate separate random `SESSION_SECRET` and `ABUSE_HASH_SECRET` values (32+ characters each). Set `ADMIN_EMAIL` and a unique `ADMIN_PASSWORD` (14+ characters) locally.
+3. Initialize the database with `npm run db:deploy`, `npm run db:seed`, `npm run admin:create`, and `npm run db:check`. No challenge activities or participation counts are fabricated.
+4. Run `npx wrangler login`. The Worker name in `wrangler.jsonc` and its `WORKER_SELF_REFERENCE` service must match.
+5. Upload `DATABASE_URL`, `SESSION_SECRET`, and `ABUSE_HASH_SECRET` with `npx wrangler secret put VARIABLE_NAME` (interactive secret input). Do not upload `ADMIN_PASSWORD`; it is only used locally for account initialization.
+6. Set `NEXT_PUBLIC_SITE_URL` locally to the final HTTPS `workers.dev` origin **before building**, and upload the same value with `wrangler secret put NEXT_PUBLIC_SITE_URL`. This controls canonical metadata and same-origin checks.
+7. Run `npm run cf:deploy`. For local Workers-runtime testing use `npm run cf:preview`; supply local runtime secrets through an ignored `.dev.vars` file. Plain `next dev` and the existing Node hosting path remain available.
+8. Verify `/`, `/api/campaign`, `/privacy`, `/admin`, an authenticated admin request, and a real approved challenge's completion flow. Check Workers CPU usage, logs, and the daily cleanup trigger. Remove the temporary `ADMIN_PASSWORD` from local configuration after storing it in a password manager.
+
+Workers Free currently allows **100,000 requests/day** and **10 ms CPU per request**. Neon Free has its own compute/storage limits and may suspend inactive compute. Database wait time does not consume Worker CPU, but Next.js SSR, Prisma, and cold requests still must be measured on the deployed Worker. Moving bcrypt to PostgreSQL removes one known CPU hotspot; a successful build or local preview alone does **not** establish that all requests fit the free quota. Do not upgrade plans automatically; quota exhaustion can interrupt availability. Consult the current [Workers limits](https://developers.cloudflare.com/workers/platform/limits/) and Neon dashboard before launch.
+
+In Workers, rate limiting uses Cloudflare's `CF-Connecting-IP` header and database pools do not retain used sockets between requests (`maxUses: 1`). Standard Node deployments preserve their existing pooling/proxy behavior. Never cache `/api/*` or `/admin` using a custom CDN cache-everything rule.
+
+The schema generates separate Node and Cloudflare clients. The `@roama/prisma-client` alias defaults to Node for scripts, tests, and ordinary Next.js builds. `cf:build` selects the Cloudflare client with a Webpack module replacement, leaving its `.wasm?module` import for OpenNext/Wrangler to bundle statically. Workers prohibit the Node client's dynamic `WebAssembly.Module` compilation. The Cloudflare build uses Webpack to avoid Turbopack's overly broad WASM file tracing; ordinary Node builds retain their existing compiler.
+
+Scoped npm overrides keep the adapter's `glob` dependency and the local preview runtime's `undici` dependency on patched releases within their existing major versions. Do not use `npm audit fix --force` to downgrade the deployment toolchain.
+
+### Preview verification (2026-10-25)
+
+- Deployed at [roama-signal-quest.keremeyubogluu.workers.dev](https://roama-signal-quest.keremeyubogluu.workers.dev).
+- The public campaign API, real admin login, and authenticated reports/config/challenge APIs returned HTTP 200. Repeated and five concurrent public reads returned the real count of zero.
+- Mobile width 390 px had no horizontal overflow; the canonical origin was correct.
+- Twenty-seven automated tests passed using a separate `roama_test` database. A local Workers-runtime probe verified completion insertion, retry idempotency, cross-origin rejection, and scheduled cleanup without adding fake activity or completions to production.
+- Browser checks covered named-star submission, the direct star receipt, unnamed completion from the challenge-detail page, admin name removal without deleting the star, zoom/pan, keyboard navigation, first/last star lookup, and modal Escape/focus restoration/reset. Layouts at 390, 666, and 1,440 px had no horizontal overflow. A responsive rule that hid the final odd-numbered challenge card on tablets was removed.
+- The compiled Workers runtime also passed named completion, retry idempotency, consent/origin rejection, region reads, admin login, and name removal while preserving the accepted completion. Production `/stars`, public region reads, secure admin login, and the star-management API were verified; production participation remains zero.
+- **CPU remains a launch blocker for a guaranteed free setup:** sampled live campaign API requests used approximately 22-252 ms CPU; one successful login used 470 ms and a reports request used 751 ms. These samples returned successfully but exceed the documented 10 ms Free request limit. The account's active subscription tier was not independently confirmed; no subscription was changed. Do not interpret successful requests as proof of Free-plan reliability.
+- The owner chose to retain this deployment as a preview. Final challenge content, legal identity/contact, privacy review, and a public name-removal contact procedure remain outstanding. The official iOS App Store link is now connected; no Android listing has been invented. No paid plan was enabled by this setup.
+
+## Alternative free hosting path
 
 The least disruptive free-hosting target is **Netlify Free + Neon Free**. The existing app stays on the standard Next.js Node runtime, and Netlify's maintained OpenNext adapter supports the App Router, SSR, route handlers, and current stable Next.js releases. `netlify.toml` pins Node 22 and leaves framework adapter selection to Netlify's automatic detection.
 
@@ -117,9 +158,9 @@ The least disruptive free-hosting target is **Netlify Free + Neon Free**. The ex
 4. Add `DATABASE_URL`, `SESSION_SECRET`, `ABUSE_HASH_SECRET`, and `NEXT_PUBLIC_SITE_URL` as private Netlify build/runtime variables. Set the site URL to the generated HTTPS `netlify.app` origin. Keep `ADMIN_EMAIL` and `ADMIN_PASSWORD` only in the trusted local environment used for `npm run admin:create`; remove `ADMIN_PASSWORD` after initialization. They are not needed by the deployed app.
 5. Keep Netlify on Free with auto-recharge disabled, and keep Neon on Free. Netlify Free currently has a 300-credit monthly hard limit and pauses sites when it is reached. Neon Free currently includes 100 compute-hours and 1 GB storage per project, and suspends compute after inactivity. These ceilings prevent overage billing but can interrupt availability. Recheck plan terms before launch.
 
-Cloudflare Workers can host Next.js via its OpenNext adapter, and Prisma documents `pg` support with Node compatibility. However, Workers Free has a 10 ms CPU limit per request. This application uses bcrypt password verification and database-backed dynamic SSR, so a free Worker may terminate real requests; proving otherwise requires an end-to-end Workers-runtime test. I have not migrated it to Cloudflare or deployed it. Netlify's Node function runtime avoids that specific runtime mismatch while preserving the existing application.
+Netlify's Node function runtime avoids the Workers-specific 10 ms CPU constraint. Cloudflare deployment is now separately configured above; use measured Workers-runtime results to decide which free platform can reliably host this application.
 
-No hosting or database account has been connected, and deployment has not been attempted or verified. Do not select paid plans, add usage packs, enable auto-recharge, or attach a payment method for this $0 setup. If either free quota is exceeded, expect requests/builds/database compute to pause rather than upgrading.
+Cloudflare and Neon are connected for the preview described above; the Netlify alternative has not been deployed. Do not select paid plans, add usage packs, enable auto-recharge, or attach a payment method for this $0 target. If a free quota is exceeded, accept interrupted availability rather than upgrading automatically.
 
 ## Privacy and launch review
 
@@ -129,8 +170,7 @@ Rate limits reduce automated bursts; they cannot prove that an activity occurred
 
 ## Current limitations
 
-- Docker Desktop is not installed in the current workspace, so PostgreSQL migrations and database-backed integration/API behavior have not been executed here. Install and start Docker Desktop, then run the local database commands above and the dedicated test-database commands below.
-- No official app-store URLs, challenge content, campaign legal identity/contact, or final privacy review were supplied.
+- Docker is optional when using Neon. Database integration tests still require a separate database whose name contains `test`; never use the live campaign database for tests.
+- Founder-approved challenge content, campaign legal identity/contact, and final privacy review are still required. Official branding and the iOS App Store link are now connected; no Android store URL has been verified.
 - Analytics source attribution is stored, but reports currently show aggregate event totals rather than detailed campaign-source breakdowns.
-- Abuse-rate limits are database-backed, but CAPTCHA and a production proxy-specific rate-limit validation remain deployment tasks.
-- The local Git repository is initialized on `main`; no commit or push has been made.
+- Abuse-rate limits are database-backed and Cloudflare client addresses are supported, but CAPTCHA and live abuse/load validation remain deployment tasks.

@@ -3,6 +3,7 @@ node_modules/
 dist/
 .turbo/
 generated/prisma/
+generated/prisma-cloudflare/
 out/
 coverage/
 work/
@@ -12,3 +13,8 @@ outputs/
 !.env.example
 npm-debug.log*
 *.tsbuildinfo
+.open-next/
+.wrangler/
+.dev.vars
+.dev.vars.*
+cloudflare-env.d.ts

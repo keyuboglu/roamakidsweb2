@@ -23,6 +23,9 @@
       }
     ],
     "paths": {
+      "@roama/prisma-client": [
+        "./generated/prisma/client.ts"
+      ],
       "@/*": [
         "./*"
       ]
@@ -37,6 +40,8 @@
   ],
   "exclude": [
     "node_modules",
-    "generated"
+    "generated",
+    ".open-next",
+    ".wrangler"
   ]
 }

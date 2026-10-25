@@ -1,9 +1,52 @@
 'use client';
-import {useEffect,useState} from 'react';import Link from 'next/link';import Image from 'next/image';
+
+import {useEffect,useState} from 'react';
+import Link from 'next/link';
+import Image from 'next/image';
+import Brand from '@/components/Brand';
+import CompletionForm from '@/components/CompletionForm';
+import {OFFICIAL_IOS_STORE_URL} from '@/lib/brand';
+
 type Challenge={slug:string;title:string;shortDescription:string;description:string;instructions:string;safety:string;duration:string|null;imageUrl:string|null};
-export default function ChallengeDetail({challenge:c}:{challenge:Challenge}){const[adult,A]=useState(false),[busy,B]=useState(false),[error,E]=useState(''),[count,C]=useState<number|null>(null),[goal,G]=useState(1000000),[done,D]=useState(false),[copied,K]=useState(false),[honeypot,H]=useState(''),[key,setKey]=useState(()=>typeof window==='undefined'?'':sessionStorage.getItem(`roama_pending_key:${c.slug}`)||crypto.randomUUID());
- useEffect(()=>{sessionStorage.setItem(`roama_pending_key:${c.slug}`,key);void fetch('/api/campaign').then(r=>r.json()).then(d=>{C(d.count);G(d.goal||1000000)}).catch(()=>{});const p=new URLSearchParams(location.search);void fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:'challenge_view',slug:c.slug,source:p.get('utm_source')||undefined,medium:p.get('utm_medium')||undefined,campaign:p.get('utm_campaign')||undefined})}).catch(()=>{});},[c.slug,key]);
- async function submit(){if(!adult||busy)return;B(true);E('');const activeKey=key||sessionStorage.getItem(`roama_pending_key:${c.slug}`)||crypto.randomUUID();sessionStorage.setItem(`roama_pending_key:${c.slug}`,activeKey);try{const r=await fetch('/api/completions',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({challengeSlug:c.slug,idempotencyKey:activeKey,adultConfirmed:true,website:honeypot})});const d=await r.json();if(!r.ok)throw Error(d.error||'Could not add your star.');C(d.count);D(true);sessionStorage.removeItem(`roama_pending_key:${c.slug}`);setKey(crypto.randomUUID());}catch(x){E(x instanceof Error?x.message:'Could not add your star. Try again.');}finally{B(false);}}
- async function share(){const url=location.href;try{if(navigator.share)await navigator.share({title:c.title,text:'Join this challenge in the Great Signal Quest.',url});else{await navigator.clipboard.writeText(url);K(true);setTimeout(()=>K(false),2000);}void fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:'share',slug:c.slug})}).catch(()=>{});}catch{}}
- return <main className="detail-page"><Link href="/" className="detail-back">← The Great Signal Quest</Link><p className="eyebrow">A SIGNAL TO FOLLOW {c.duration&&`· ${c.duration}`}</p><h1>{c.title}</h1><p className="detail-lede">{c.shortDescription}</p>{c.imageUrl&&<Image className="detail-art" src={c.imageUrl} alt="" width={1200} height={700} unoptimized/>}{c.description&&<section><h2>Discover</h2><p>{c.description}</p></section>}<section><h2>Your challenge</h2><p>{c.instructions}</p></section>{c.safety&&<section><h2>Stay safe</h2><p>{c.safety}</p></section>}<section className="detail-complete">{done?<><span className="success-icon">✦</span><p className="eyebrow">SIGNAL RECEIVED</p><h2>YOUR STAR HAS BEEN ADDED.</h2><p>One more star in our global quest. Thank you for taking part.</p><p className="success-count"><strong>{count?.toLocaleString()??'—'}</strong> / {goal.toLocaleString()} stars</p><button className="button button-gold" onClick={()=>void share()}>{copied?'Link copied ✓':'Share this challenge ↗'}</button></>:<><h2>Completed this challenge?</h2><p>A parent, guardian, or adult organizer confirms that the activity was completed safely. No child account or personal details are needed.</p><label className="adult-check"><input type="checkbox" checked={adult} onChange={e=>{A(e.target.checked);if(e.target.checked)void fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:'completion_started',slug:c.slug})}).catch(()=>{});}}/><span>I’m a parent, guardian, or adult organizer, and I confirm this challenge was completed safely.</span></label><label className="honeypot" aria-hidden="true">Website<input tabIndex={-1} autoComplete="off" value={honeypot} onChange={e=>H(e.target.value)}/></label>{error&&<p className="form-error" role="alert">{error}</p>}<button className="button button-gold" disabled={!adult||busy} onClick={()=>void submit()}>{busy?'Adding your star…':'Confirm & add your star ✦'}</button></>}</section><p><Link className="text-link" href="/#challenges">← Explore more challenges</Link></p></main>;
+
+export default function ChallengeDetail({challenge}:{challenge:Challenge}) {
+  const [goal,setGoal]=useState(1000000);
+  const [notice,setNotice]=useState('');
+  useEffect(()=>{
+    const controller=new AbortController();
+    void fetch('/api/campaign',{signal:controller.signal}).then(async response=>{
+      if(!response.ok)throw new Error('Campaign data unavailable.');
+      const data=await response.json();
+      setGoal(data.goal);
+    }).catch(error=>{if(!controller.signal.aborted)console.warn('Challenge campaign data unavailable.',error);});
+    const params=new URLSearchParams(location.search);
+    void fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:'challenge_view',slug:challenge.slug,source:params.get('utm_source')||undefined,medium:params.get('utm_medium')||undefined,campaign:params.get('utm_campaign')||undefined})}).catch(error=>console.warn('Challenge analytics unavailable.',error));
+    return ()=>controller.abort();
+  },[challenge.slug]);
+
+  async function share() {
+    try {
+      if(navigator.share)await navigator.share({title:challenge.title,text:'Join this challenge in the Great Signal Quest.',url:location.href});
+      else {await navigator.clipboard.writeText(location.href);setNotice('Challenge link copied.');}
+      void fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:'share',slug:challenge.slug})}).catch(error=>console.warn('Share analytics unavailable.',error));
+    } catch(error) {
+      if(error instanceof DOMException&&error.name==='AbortError')return;
+      setNotice('The link could not be shared. You can copy it from your address bar.');
+    }
+  }
+
+  return <main className="detail-page">
+    <div className="detail-brand-row"><Brand/><Link className="text-link" href="/stars">Explore a million stars ↗</Link></div>
+    <Link href="/" className="detail-back">← The Great Signal Quest</Link>
+    <p className="eyebrow">A SIGNAL TO FOLLOW {challenge.duration&&`· ${challenge.duration}`}</p>
+    <h1>{challenge.title}</h1><p className="detail-lede">{challenge.shortDescription}</p>
+    {challenge.imageUrl&&<Image className="detail-art" src={challenge.imageUrl} alt="" width={1200} height={700} unoptimized/>}
+    {challenge.description&&<section><h2>Discover</h2><p>{challenge.description}</p></section>}
+    <section><h2>Your challenge</h2><p>{challenge.instructions}</p></section>
+    {challenge.safety&&<section><h2>Stay safe</h2><p>{challenge.safety}</p></section>}
+    <section className="detail-complete"><h2>Completed this challenge?</h2><p>A parent, guardian, or adult organizer confirms that the activity was completed safely. Choose a made-up name for your public star, or leave it unnamed.</p><CompletionForm slug={challenge.slug} goal={goal}/></section>
+    <div className="detail-links"><button className="share-button" onClick={()=>void share()}>Share this challenge ↗</button><a className="text-link" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer">ROAMA Kids on the App Store ↗</a></div>
+    {notice&&<p role="status">{notice}</p>}
+    <p><Link className="text-link" href="/#challenges">← Explore more challenges</Link></p>
+  </main>;
 }

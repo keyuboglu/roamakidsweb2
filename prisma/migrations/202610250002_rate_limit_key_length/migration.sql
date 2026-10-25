@@ -1,0 +1,1 @@
+ALTER TABLE "RateLimitBucket" ALTER COLUMN "key" TYPE VARCHAR(100);

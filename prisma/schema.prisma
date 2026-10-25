@@ -3,6 +3,12 @@ generator client {
   output   = "../generated/prisma"
 }
 
+generator clientCloudflare {
+  provider = "prisma-client"
+  output   = "../generated/prisma-cloudflare"
+  runtime  = "cloudflare"
+}
+
 datasource db {
   provider = "postgresql"
 }
@@ -57,6 +63,8 @@ model Completion {
   countryCode    String?          @db.Char(2)
   idempotencyKey String           @unique @db.VarChar(80)
   abuseKey       String?          @db.VarChar(64)
+  starNumber     Int              @unique
+  starName       String?          @db.VarChar(40)
 
   @@index([status, registeredAt])
   @@index([challengeId, status])
@@ -74,6 +82,7 @@ model CampaignConfig {
   androidStoreUrl String?  @db.Text
   socialImageUrl  String?  @db.Text
   published       Boolean  @default(false)
+  starsIssued     Int      @default(0)
   updatedAt       DateTime @updatedAt
 }
 
@@ -101,7 +110,7 @@ model AnalyticsEvent {
 }
 
 model RateLimitBucket {
-  key         String   @id @db.VarChar(64)
+  key         String   @id @db.VarChar(100)
   windowStart DateTime
   count       Int      @default(0)
 
