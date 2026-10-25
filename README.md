@@ -1,14 +1,14 @@
 # ROAMA Kids — The Great Signal Quest
 
-An adult-organized global challenge platform built with Next.js, TypeScript, PostgreSQL, and Prisma. The browser never changes the global total directly: a completed adult confirmation creates one unique completion row inside a database transaction, and the server returns the accepted-row count.
+An adult-organized, one-time ROAMA Kids campaign built with Next.js, TypeScript, PostgreSQL, and Prisma. The browser never changes the global total directly: an adult email verification creates at most one unique star inside a database transaction, and the server returns the authoritative verified-claim count.
 
 ## Architecture
 
 - Next.js App Router renders the public campaign and challenge pages.
 - Prisma is the PostgreSQL access layer; versioned SQL lives in `prisma/migrations/`.
 - Admin passwords are bcrypt hashes. Verification uses PostgreSQL `pgcrypto` so bcrypt work does not consume Workers Free request CPU. The database must permit this extension (Neon supports it); migrations enable it. Admin sessions are signed, eight-hour, HttpOnly cookies (`Secure` in production, `SameSite=Strict`). All admin API handlers re-check that the account still exists.
-- Registrations are idempotent via a client-generated random UUID retained for retry, with unique database constraint, challenge publication validation, server-side adult confirmation, transaction-safe completion + analytics insert, and authoritative count query.
-- PostgreSQL-backed request buckets throttle registration (30 per network key per hour), admin login (8 per 15 minutes), and analytics (80 per hour). Network addresses are HMACed with `ABUSE_HASH_SECRET`; no raw address is stored. Bucket keys allow the operation prefix plus the full 64-character hash. Cloudflare schedules cleanup of abuse hashes after 30 days and expired rate buckets after 24 hours.
+- Adult email verification uses Resend's HTTPS API. A cryptographically random, one-use token is sent only after a published challenge is selected; PostgreSQL stores only its SHA-256 hash, a keyed adult-email digest, the optional pseudonym, and a 20-minute expiry. Token consumption, one-star-per-digest enforcement, permanent number allocation, and the verified counter are transaction-safe. Email addresses are sent transiently to Resend and are not stored in the campaign database or used for marketing.
+- PostgreSQL-backed request buckets throttle email requests (5 per network key and 3 per email digest per hour), token redemption (10 per network key per hour), public star lookup (120 per network key per hour), admin login (8 per 15 minutes), and analytics (80 per hour). Network addresses are HMACed with `ABUSE_HASH_SECRET`; no raw address is stored. Cloudflare schedules cleanup of abuse hashes after 30 days, expired rate buckets after 24 hours, and expired email tokens after 24 hours.
 - First-party analytics store event, optional published challenge, UTM source/medium/campaign, and app-store target only. No child identity is collected.
 - The founder dashboard at `/admin` manages challenges and campaign content, targets, milestones, store URLs, and aggregate reports. CSV export contains aggregate challenge totals.
 
@@ -19,7 +19,7 @@ The ROAMA Kids fox logo was supplied directly by the owner. The shared brand com
 - `/stars` is a separate, zoomable/pannable map with exactly **1,000 × 1,000** stable star positions. An initial 2,000 × 2,000 pixel texture contains exactly one million distinct star pixels; the browser does not create a million DOM elements. An overview shows regional density and recent discoveries, with enlarged glints from actual unlit positions to keep the sky legible below pixel resolution. Zooming in draws individual stars rather than enlarged square pixels and loads the visible regions. Buttons, keyboard panning, and star-number lookup are available alongside pointer navigation. Camera bounds keep the sky in view, including near the first and last stars.
 - Only an accepted, adult-confirmed challenge completion lights a star. Empty positions are not fabricated participation. Each new completion receives a unique permanent number from a transactional counter; retries and conflicts roll back that reservation. The sky accepts at most **1,000,000** stars. Existing completions receive stable numbers in migration order.
 - A fictional star name is optional (40 characters maximum). Named submissions require explicit public-name acknowledgement as well as adult completion confirmation. URLs, email addresses, markup, and long numeric identifiers are rejected. Input checks cannot identify every real name or inappropriate word: the interface prohibits personal details, but names appear immediately without pre-publication moderation at the owner's request.
-- Both the home-page dialog and challenge-detail page use the same completion form, including preserved retry keys and a direct `Find my star` link. The home dialog supports Escape, focus containment, focus restoration, and independent form state when reopened.
+- The challenge detail page collects an adult email, an optional fictional public pseudonym, and adult completion confirmation. After email verification, the reveal view offers a downloadable PNG, native share where available, a public star link, and the official App Store CTA. New and existing verified emails use the same generic request response; a verified existing email recovers its original star.
 - Public `/api/stars` returns at most 400 regional counts and 500 recent stars. Individual 50 × 50 regions return at most 2,500 public `{starNumber, starName}` records. The browser fetches at most four regions concurrently and retains at most 32 regions, not every completion. Star data refreshes approximately every 30 seconds.
 - Authenticated `/admin` → **Star names** lists named stars in pages of 50 and can remove a public name without deleting the completion or changing its number/count. The owner still needs a published removal/contact procedure and final privacy review before promotion.
 
@@ -35,7 +35,7 @@ The ROAMA Kids fox logo was supplied directly by the owner. The shared brand com
 cp .env.example .env
 ```
 
-Set `SESSION_SECRET` and `ABUSE_HASH_SECRET` to different random values of at least 32 characters. For example, generate each with `openssl rand -base64 48` and store them only in your ignored local `.env` file. The example database URL matches the included local Docker database.
+Set `SESSION_SECRET`, `ABUSE_HASH_SECRET`, and `ADULT_EMAIL_HASH_SECRET` to different random values of at least 32 characters. For example, generate each with `openssl rand -base64 48` and store them only in your ignored local `.env` file. Keep `ADULT_EMAIL_HASH_SECRET` stable: rotating it prevents existing verified addresses from recovering their stars. The example database URL matches the included local Docker database.
 
 ```sh
 docker compose up -d postgres
@@ -48,6 +48,8 @@ npm run dev
 ```
 
 The campaign opens at `http://localhost:3000`. No challenges are seeded: create real founder-approved challenge content in the admin after the first admin is initialized.
+
+Email claims remain unavailable until the required Resend configuration is present. Only use a sender address whose domain is currently verified in the Resend account. Do not put API keys in the repository or frontend configuration.
 
 ## Initialize the first admin
 
@@ -69,10 +71,16 @@ Sign in at `/admin`. Admin actions require the signed session cookie and a same-
 | `NEXT_PUBLIC_SITE_URL` | Canonical HTTPS site origin; used for metadata and same-origin mutation checks. |
 | `SESSION_SECRET` | HMAC signing secret for admin sessions (32+ chars). |
 | `ABUSE_HASH_SECRET` | Separate secret used to HMAC network keys for throttling (32+ chars). |
+| `ADULT_EMAIL_HASH_SECRET` | Separate, stable HMAC key for one-way adult-email digests (32+ chars). |
+| `RESEND_API_KEY` | Private server-side Resend API key used only for transactional verification messages. |
+| `RESEND_FROM_EMAIL` | Sender name and address on a domain verified in the Resend account. |
+| `RESEND_SENDER_DOMAIN_VERIFIED` | Set to `true` only after confirming the sender domain is currently verified in Resend; the provider remains authoritative and rejects unverified senders. |
 | `ADMIN_EMAIL` | Initial admin account email used by `npm run admin:create`. |
 | `ADMIN_PASSWORD` | Temporary initial/admin reset password; never commit or retain in deployment config longer than needed. |
 
 Store URLs are editable in the authenticated Campaign tab. Only enter the actual ROAMA Kids listings. The service does not invent a store destination.
+
+For Cloudflare, store `RESEND_API_KEY`, `ADULT_EMAIL_HASH_SECRET`, `ABUSE_HASH_SECRET`, and `SESSION_SECRET` as Worker secrets (for example with `wrangler secret put NAME`); set `RESEND_FROM_EMAIL`, `RESEND_SENDER_DOMAIN_VERIFIED=true`, and `NEXT_PUBLIC_SITE_URL` as Worker variables. Never paste secret values into chat or commit them. Set the verification flag only after confirming the sender domain remains verified in Resend, and supply the owner's approved challenge text and safety guidance before enabling participation.
 
 ## Database changes and maintenance
 
@@ -95,7 +103,7 @@ Run privacy cleanup daily from a trusted scheduled job:
 npm run db:maintenance
 ```
 
-It removes HMAC abuse hashes older than 30 days and rate-limit bucket keys older than 24 hours. Cloudflare deployments schedule equivalent SQL daily at 03:00 UTC through the Worker cron trigger; verify successful executions in Workers Logs. Other hosting providers still require an external schedule. Back up PostgreSQL on the provider’s supported schedule, encrypt backups, and periodically test restore into a separate database. Never point integration tests at production.
+It removes HMAC abuse hashes older than 30 days, rate-limit buckets older than 24 hours, and email-verification tokens more than 24 hours past expiry. Cloudflare deployments schedule equivalent SQL daily at 03:00 UTC through the Worker cron trigger; verify successful executions in Workers Logs. Other hosting providers still require an external schedule. Back up PostgreSQL on the provider’s supported schedule, encrypt backups, and periodically test restore into a separate database. Never point integration tests at production.
 
 ## Checks and tests
 
@@ -171,6 +179,6 @@ Rate limits reduce automated bursts; they cannot prove that an activity occurred
 ## Current limitations
 
 - Docker is optional when using Neon. Database integration tests still require a separate database whose name contains `test`; never use the live campaign database for tests.
-- Founder-approved challenge content, campaign legal identity/contact, and final privacy review are still required. Official branding and the iOS App Store link are now connected; no Android store URL has been verified.
+- Founder-approved challenge content, a currently Resend-verified sender domain, private Resend/secret configuration, campaign legal identity/contact, and final privacy review are still required. No actual Resend delivery has been verified from this workspace. Official branding and the iOS App Store link are connected; no Android store URL has been verified.
 - Analytics source attribution is stored, but reports currently show aggregate event totals rather than detailed campaign-source breakdowns.
 - Abuse-rate limits are database-backed and Cloudflare client addresses are supported, but CAPTCHA and live abuse/load validation remain deployment tasks.

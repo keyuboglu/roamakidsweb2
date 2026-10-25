@@ -11,7 +11,7 @@ export async function GET(req:NextRequest) {
   if(!parsed.success)return NextResponse.json({error:'Choose a valid star page.'},{status:400});
   try {
     const stars=await prisma.completion.findMany({
-      where:{starName:{not:null},starNumber:{lt:parsed.data}},
+      where:{starName:{not:null},emailVerifiedAt:{not:null},starNumber:{lt:parsed.data}},
       select:{starNumber:true,starName:true,challenge:{select:{title:true}}},
       orderBy:{starNumber:'desc'},take:51,
     });
@@ -27,7 +27,7 @@ export async function DELETE(req:NextRequest) {
   const parsed=z.object({starNumber:z.number().int().min(1).max(STAR_CAPACITY)}).safeParse(await req.json().catch(()=>null));
   if(!parsed.success)return NextResponse.json({error:'Choose a valid star.'},{status:400});
   try {
-    const changed=await prisma.completion.updateMany({where:{starNumber:parsed.data.starNumber},data:{starName:null}});
+    const changed=await prisma.completion.updateMany({where:{starNumber:parsed.data.starNumber,emailVerifiedAt:{not:null}},data:{starName:null}});
     if(!changed.count)return NextResponse.json({error:'This star could not be found.'},{status:404});
     return NextResponse.json({ok:true});
   } catch(error) {

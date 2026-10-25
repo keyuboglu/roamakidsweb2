@@ -1,68 +1,64 @@
 'use client';
 
-import {useRef,useState} from 'react';
+import {useState,type FormEvent} from 'react';
 import Link from 'next/link';
-import {STAR_NAME_MAX_LENGTH} from '@/lib/stars';
 
-type Result={count:number;duplicate:boolean;starNumber:number;starName:string|null};
-
-export default function CompletionForm({slug,goal,onSuccess}:{slug:string;goal:number;onSuccess?:(result:Result)=>void}) {
-  const [adult,setAdult]=useState(false);
-  const [name,setName]=useState('');
-  const [publicConfirmed,setPublicConfirmed]=useState(false);
-  const [website,setWebsite]=useState('');
+export default function CompletionForm({challengeSlug,verificationEnabled}:{challengeSlug:string;verificationEnabled:boolean}) {
+  const [starName,setStarName]=useState('');
   const [busy,setBusy]=useState(false);
+  const [message,setMessage]=useState('');
   const [error,setError]=useState('');
-  const [result,setResult]=useState<Result|null>(null);
-  const pendingKey=useRef<string|null>(null);
 
-  async function submit(event:React.FormEvent) {
+  async function submit(event:FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if(busy||!adult)return;
+    const formElement=event.currentTarget;
     setBusy(true);
+    setMessage('');
     setError('');
+    const form=new FormData(formElement);
     try {
-      const storageKey=`roama_pending_key:${slug}`;
-      const key=pendingKey.current||sessionStorage.getItem(storageKey)||crypto.randomUUID();
-      pendingKey.current=key;
-      sessionStorage.setItem(storageKey,key);
-      const response=await fetch('/api/completions',{
-        method:'POST',headers:{'Content-Type':'application/json'},
-        body:JSON.stringify({challengeSlug:slug,idempotencyKey:key,adultConfirmed:true,website,starName:name.trim(),publicNameConfirmed:publicConfirmed}),
+      const response=await fetch('/api/verification/request',{
+        method:'POST',
+        headers:{'Content-Type':'application/json'},
+        body:JSON.stringify({
+          email:form.get('email'),
+          challengeSlug,
+          adultConfirmed:form.get('adultConfirmed')==='on',
+          starName:form.get('starName'),
+          publicNameConfirmed:form.get('publicNameConfirmed')==='on',
+          website:form.get('website'),
+        }),
       });
-      const data=await response.json();
-      if(!response.ok)throw new Error(data.error||'Could not add your star. Please try again.');
-      sessionStorage.removeItem(storageKey);
-      setResult(data);
-      onSuccess?.(data);
-    } catch(error) {
-      setError(error instanceof Error?error.message:'Could not add your star. Please try again.');
+      const result=await response.json() as {message?:string;error?:string};
+      if(!response.ok)throw new Error(result.error||'Your verification request could not be sent. Please try again.');
+      setMessage(result.message||'If the request can be completed, a verification link will arrive shortly.');
+      formElement.reset();
+      setStarName('');
+    } catch(caught) {
+      setError(caught instanceof Error?caught.message:'The request could not be sent. Check your connection and retry.');
     } finally {
       setBusy(false);
     }
   }
 
-  if(result)return <div className="star-receipt" role="status">
-    <span className="success-icon" aria-hidden="true">✦</span>
-    <p className="eyebrow">SIGNAL RECEIVED · STAR #{result.starNumber.toLocaleString('en-US')}</p>
-    <h2>{result.starName||'Your star is shining.'}</h2>
-    <p>Your adult-confirmed discovery now has a permanent place in our million-star sky.</p>
-    <p className="success-count"><strong>{result.count.toLocaleString('en-US')}</strong> / {goal.toLocaleString('en-US')} stars</p>
-    <Link className="button button-gold" href={`/stars?star=${result.starNumber}`}>Find my star <span>↗</span></Link>
+  if(!verificationEnabled)return <div className="claim-paused" role="status">
+    <p><strong>Star claims are temporarily paused.</strong> Email verification is not configured, so no email was collected and no star was created. Please check back later.</p>
+    <Link href="/privacy">Privacy information</Link>
   </div>;
 
   return <form className="completion-form" onSubmit={event=>void submit(event)}>
-    <label className="star-name-label" htmlFor={`star-name-${slug}`}>Name your star <span>(optional)</span></label>
-    <input className="star-name-input" id={`star-name-${slug}`} value={name} maxLength={STAR_NAME_MAX_LENGTH} placeholder="Brave Explorer" autoComplete="off" aria-describedby={`star-name-help-${slug}`} onChange={event=>{setName(event.target.value);setPublicConfirmed(false);}}/>
-    <p className="star-name-help" id={`star-name-help-${slug}`}>Choose a made-up star name, not a child&apos;s real name. Never include contact details, a school, or a location. Star names are public.</p>
-    {name.trim()&&<label className="adult-check"><input type="checkbox" checked={publicConfirmed} onChange={event=>setPublicConfirmed(event.target.checked)} required/><span>I confirm this is a made-up name, contains no personal information, and may be shown publicly.</span></label>}
-    <label className="adult-check"><input type="checkbox" checked={adult} onChange={event=>{
-      setAdult(event.target.checked);
-      if(event.target.checked)void fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:'completion_started',slug})}).catch(error=>console.warn('Completion-start analytics unavailable.',error));
-    }} required/><span>I&apos;m a parent, guardian, or adult organizer, and I confirm this challenge was completed safely.</span></label>
-    <label className="honeypot" aria-hidden="true">Website<input tabIndex={-1} autoComplete="off" value={website} onChange={event=>setWebsite(event.target.value)}/></label>
-    {error&&<p className="form-error" role="alert">{error}</p>}
-    <button className="button button-gold" disabled={!adult||busy||Boolean(name.trim()&&!publicConfirmed)}>{busy?'Adding your star…':'Confirm & add your star ✦'}</button>
-    <p className="modal-note">One safely completed challenge. One real star. <Link href="/privacy">Privacy information</Link></p>
+    <label className="completion-field">Parent, guardian, or adult organizer email
+      <input name="email" type="email" autoComplete="email" maxLength={254} required/>
+    </label>
+    <label className="completion-field">Made-up name for your star <span>(optional; publicly visible)</span>
+      <input name="starName" value={starName} onChange={event=>setStarName(event.target.value)} maxLength={40} autoComplete="off"/>
+    </label>
+    {starName.trim()&&<label className="completion-check"><input name="publicNameConfirmed" type="checkbox" required/> I confirm this is a fictional name with no personal information and may be shown publicly.</label>}
+    <label className="completion-check"><input name="adultConfirmed" type="checkbox" required/> I am an adult organizer and confirm that the challenge was completed safely.</label>
+    <label className="completion-honeypot" aria-hidden="true">Leave this field empty<input name="website" tabIndex={-1} autoComplete="off"/></label>
+    <button className="button button-gold" type="submit" disabled={busy}>{busy?'Sending verification…':'Email me a verification link'}</button>
+    <p className="completion-privacy">Use an adult email, not a child’s. Verification is not marketing consent. <Link href="/privacy">Privacy details</Link></p>
+    {message&&<p className="completion-message" role="status">{message}</p>}
+    {error&&<p className="completion-error" role="alert">{error}</p>}
   </form>;
 }

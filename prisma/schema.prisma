@@ -31,6 +31,8 @@ enum AnalyticsEventType {
   COMPLETION_ACCEPTED
   SHARE
   STORE_CLICK
+  STAR_CARD_DOWNLOADED
+  STAR_CARD_SHARED
 }
 
 model Challenge {
@@ -50,6 +52,7 @@ model Challenge {
   publishedAt      DateTime?
   completions      Completion[]
   events           AnalyticsEvent[]
+  emailVerificationTokens EmailVerificationToken[]
 
   @@index([status, displayOrder])
 }
@@ -65,10 +68,27 @@ model Completion {
   abuseKey       String?          @db.VarChar(64)
   starNumber     Int              @unique
   starName       String?          @db.VarChar(40)
+  adultEmailHash String?          @unique @db.Char(64)
+  emailVerifiedAt DateTime?
 
   @@index([status, registeredAt])
   @@index([challengeId, status])
   @@index([abuseKey, registeredAt])
+}
+
+model EmailVerificationToken {
+  id             String     @id @default(cuid())
+  tokenHash      String     @unique @db.Char(64)
+  adultEmailHash String     @db.Char(64)
+  challengeId    String
+  challenge      Challenge  @relation(fields: [challengeId], references: [id], onDelete: Restrict)
+  starName       String?    @db.VarChar(40)
+  createdAt      DateTime   @default(now())
+  expiresAt      DateTime
+  consumedAt     DateTime?
+
+  @@index([adultEmailHash, expiresAt])
+  @@index([expiresAt])
 }
 
 model CampaignConfig {

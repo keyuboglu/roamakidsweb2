@@ -3,7 +3,9 @@
 import {useCallback,useEffect,useRef,useState} from 'react';
 import Link from 'next/link';
 import Brand from '@/components/Brand';
+import StarCardActions from '@/components/StarCardActions';
 import {OFFICIAL_IOS_STORE_URL,OFFICIAL_SITE_URL} from '@/lib/brand';
+import {trackStoreClick} from '@/lib/client-analytics';
 import {
   STAR_CAPACITY,STAR_COLUMNS,STAR_ROWS,STAR_SPACING,STAR_WORLD_SIZE,
   STAR_TILE_COUNT,STAR_TILE_SIZE,buildStarPixels,isStarNumber,starPosition,starTile,
@@ -276,10 +278,10 @@ export default function StarMap() {
   const selectedStar=selectedEntry?.stars.find(star=>star.starNumber===selected)||overview?.recent.find(star=>star.starNumber===selected);
 
   return <main className="star-page">
-    <header className="star-header"><Brand/><nav><Link href="/#challenges">The challenges</Link><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">Meet ROAMA Kids ↗</a><a className="nav-cta" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer">App Store ↗</a></nav></header>
+    <header className="star-header"><Brand/><nav><Link href="/#challenges">The challenge</Link><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">Meet ROAMA Kids ↗</a><a className="nav-cta" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios')}>App Store ↗</a></nav></header>
     <section className="star-intro"><div><p className="eyebrow">ONE WORLD · ONE MILLION PLACES TO SHINE</p><h1>A sky we build <em>together.</em></h1><p>Every bright star is a real, adult-confirmed discovery. The quiet ones are waiting for a new adventure.</p></div><div className="star-total" aria-live="polite"><strong>{overview?overview.count.toLocaleString('en-US'):'—'}</strong><span> / 1,000,000 stars lit</span></div></section>
     <section className="star-explorer" aria-label="One million star explorer">
-      <div className="star-map-toolbar"><span><i className="lit-dot"/> Confirmed discoveries <i className="dim-dot"/> Awaiting a discovery</span><div><button aria-label="Zoom out" onClick={()=>zoomAt(0.5)}>−</button><output aria-label="Zoom level">{camera.zoom.toFixed(camera.zoom<10?1:0)}×</output><button aria-label="Zoom in" onClick={()=>zoomAt(2)}>+</button><button onClick={()=>{setCamera(centered);setSelected(null);window.history.replaceState(null,'','/stars');}}>View all</button></div></div>
+      <div className="star-map-toolbar"><span><i className="lit-dot"/> Verified adult stars <i className="dim-dot"/> Awaiting a claim</span><div><button aria-label="Zoom out" onClick={()=>zoomAt(0.5)}>−</button><output aria-label="Zoom level">{camera.zoom.toFixed(camera.zoom<10?1:0)}×</output><button aria-label="Zoom in" onClick={()=>zoomAt(2)}>+</button><button onClick={()=>{setCamera(centered);setSelected(null);window.history.replaceState(null,'','/stars');}}>View all</button></div></div>
       <div className="star-canvas-wrap" ref={container}>
         <canvas ref={canvas} className="star-canvas" tabIndex={0} role="img" aria-label="A map of exactly one million star positions. Use the zoom buttons, drag to explore, or find a star by number." data-slot-count={STAR_CAPACITY}
           onKeyDown={event=>{
@@ -313,10 +315,11 @@ export default function StarMap() {
       <div className="star-map-bottom"><form onSubmit={event=>{event.preventDefault();locate(Number(find));}}><label htmlFor="find-star">Find a star</label><input id="find-star" type="number" min="1" max={STAR_CAPACITY} placeholder="Star number" value={find} onChange={event=>setFind(event.target.value)} required/><button className="button button-gold">Find ↗</button></form><p>1,000 columns × 1,000 rows. Every star has its own permanent number.</p></div>
       {(error||regionError)&&<div className="star-map-error" role="alert"><p>{error||regionError}</p><button className="share-button" onClick={()=>setRetry(value=>value+1)}>Try again</button></div>}
     </section>
-    {selected&&<section className="selected-star" aria-live="polite"><span className="selected-star-icon" aria-hidden="true">✦</span><div><p className="eyebrow">STAR #{selected.toLocaleString('en-US')}</p><h2>{selectedStar?selectedStar.starName||'A discovery without a name':selectedEntry?'Your next discovery could shine here.':'Connecting to this part of the sky…'}</h2><p>{selectedStar?'A real activity, safely completed and confirmed by an adult.':selectedEntry?'This star has not been lit. Complete a challenge together to add a new light.':'Names load only for the part of the sky you explore.'}</p></div>{selectedStar?<button className="share-button" onClick={async()=>{
+    {selected&&<section className="selected-star" aria-live="polite"><span className="selected-star-icon" aria-hidden="true">✦</span><div><p className="eyebrow">STAR #{selected.toLocaleString('en-US')}</p><h2>{selectedStar?selectedStar.starName||'A discovery without a name':selectedEntry?'Your next discovery could shine here.':'Connecting to this part of the sky…'}</h2><p>{selectedStar?'One permanent star in the ROAMA Signal Quest.':selectedEntry?'This star has not been claimed.': 'Names load only for the part of the sky you explore.'}</p></div>{selectedStar?<StarCardActions starNumber={selected} starName={selectedStar.starName} onStatus={setShareStatus}/>:<Link className="button button-gold" href="/#challenges">Choose a challenge ↗</Link>}
+      {selectedStar&&<button className="share-button" onClick={async()=>{
       try {await navigator.clipboard.writeText(`${window.location.origin}/stars?star=${selected}`);setShareStatus('Star link copied.');}
       catch(error){console.warn('Star link could not be copied.',error);setRegionError('Copy the star link from your browser address bar.');}
-    }}>Copy star link</button>:<Link className="button button-gold" href="/#challenges">Choose a challenge ↗</Link>}</section>}
+    }}>Copy star link</button>}</section>}
     {shareStatus&&<p className="star-share-status" role="status">{shareStatus}</p>}
     <section className="star-next"><div><p className="eyebrow">A REAL DISCOVERY. A LITTLE LIGHT.</p><h2>What will your star be called?</h2><p>Choose a challenge, explore safely with an adult, and give your star a made-up name. No child account needed.</p></div><Link className="button button-gold" href="/#challenges">Start an adventure ↗</Link></section>
     <footer className="star-footer"><Brand/><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">Official ROAMA Kids website ↗</a><Link href="/privacy">Privacy information</Link></footer>

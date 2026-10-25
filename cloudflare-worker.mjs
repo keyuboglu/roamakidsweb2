@@ -8,6 +8,7 @@ async function maintainPrivacy(connectionString) {
     await client.connect();
     await client.query(`UPDATE "Completion" SET "abuseKey" = NULL WHERE "registeredAt" < NOW() - INTERVAL '30 days' AND "abuseKey" IS NOT NULL`);
     await client.query(`DELETE FROM "RateLimitBucket" WHERE "windowStart" < NOW() - INTERVAL '24 hours'`);
+    await client.query(`DELETE FROM "EmailVerificationToken" WHERE "expiresAt" < NOW() - INTERVAL '24 hours'`);
     console.log('Scheduled privacy maintenance completed.');
   } finally {
     await client.end();

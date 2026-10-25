@@ -6,22 +6,15 @@ import Image from 'next/image';
 import Brand from '@/components/Brand';
 import CompletionForm from '@/components/CompletionForm';
 import {OFFICIAL_IOS_STORE_URL} from '@/lib/brand';
+import {trackStoreClick} from '@/lib/client-analytics';
 
 type Challenge={slug:string;title:string;shortDescription:string;description:string;instructions:string;safety:string;duration:string|null;imageUrl:string|null};
 
-export default function ChallengeDetail({challenge}:{challenge:Challenge}) {
-  const [goal,setGoal]=useState(1000000);
+export default function ChallengeDetail({challenge,verificationEnabled}:{challenge:Challenge;verificationEnabled:boolean}) {
   const [notice,setNotice]=useState('');
   useEffect(()=>{
-    const controller=new AbortController();
-    void fetch('/api/campaign',{signal:controller.signal}).then(async response=>{
-      if(!response.ok)throw new Error('Campaign data unavailable.');
-      const data=await response.json();
-      setGoal(data.goal);
-    }).catch(error=>{if(!controller.signal.aborted)console.warn('Challenge campaign data unavailable.',error);});
     const params=new URLSearchParams(location.search);
     void fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:'challenge_view',slug:challenge.slug,source:params.get('utm_source')||undefined,medium:params.get('utm_medium')||undefined,campaign:params.get('utm_campaign')||undefined})}).catch(error=>console.warn('Challenge analytics unavailable.',error));
-    return ()=>controller.abort();
   },[challenge.slug]);
 
   async function share() {
@@ -44,9 +37,9 @@ export default function ChallengeDetail({challenge}:{challenge:Challenge}) {
     {challenge.description&&<section><h2>Discover</h2><p>{challenge.description}</p></section>}
     <section><h2>Your challenge</h2><p>{challenge.instructions}</p></section>
     {challenge.safety&&<section><h2>Stay safe</h2><p>{challenge.safety}</p></section>}
-    <section className="detail-complete"><h2>Completed this challenge?</h2><p>A parent, guardian, or adult organizer confirms that the activity was completed safely. Choose a made-up name for your public star, or leave it unnamed.</p><CompletionForm slug={challenge.slug} goal={goal}/></section>
-    <div className="detail-links"><button className="share-button" onClick={()=>void share()}>Share this challenge ↗</button><a className="text-link" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer">ROAMA Kids on the App Store ↗</a></div>
+    <section className="detail-complete"><h2>Completed this challenge?</h2><p>A parent, guardian, or adult organizer confirms that the activity was completed safely. Each verified adult email can receive one permanent star.</p><CompletionForm challengeSlug={challenge.slug} verificationEnabled={verificationEnabled}/></section>
+    <div className="detail-links"><button className="share-button" onClick={()=>void share()}>Share this challenge ↗</button><a className="text-link" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios')}>ROAMA Kids on the App Store ↗</a></div>
     {notice&&<p role="status">{notice}</p>}
-    <p><Link className="text-link" href="/#challenges">← Explore more challenges</Link></p>
+    <p><Link className="text-link" href="/#challenges">← Return to the challenge</Link></p>
   </main>;
 }
