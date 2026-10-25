@@ -7,8 +7,16 @@
   "workers_dev": true,
   "preview_urls": false,
   "vars": {
-    "CLOUDFLARE_WORKER": "true"
+    "CLOUDFLARE_WORKER": "true",
+    "RESEND_FROM_EMAIL": "ROAMA Signal Quest <info@roama.tech>",
+    "RESEND_SENDER_DOMAIN_VERIFIED": "true"
   },
+  "routes": [
+    {
+      "pattern": "signalquest.roama.tech",
+      "custom_domain": true
+    }
+  ],
   "triggers": {
     "crons": ["0 3 * * *"]
   },
