@@ -149,6 +149,9 @@ footer>div{display:flex;gap:20px;flex-wrap:wrap}
 .star-public-link{color:#f2d391;font-size:11px;text-decoration:underline;text-underline-offset:3px}
 .verify-notice{max-width:100%;color:#dce3ec;font-size:11px;line-height:1.6;overflow-wrap:anywhere}
 .reveal-store{display:inline-flex;align-items:center;justify-content:center;margin-top:10px;padding:12px 18px;color:#182137;background:var(--gold);font-size:12px;font-weight:700;text-align:center}
+.bridge-core-star{position:absolute;right:7px;top:13px;width:15px;height:15px;fill:#ffe6a4}
+.bridge-star{width:15px;height:15px;fill:currentColor;filter:drop-shadow(0 0 6px currentColor)}
+.closing-stars svg{width:15px;height:15px;fill:currentColor;vertical-align:middle}
 @media(max-width:520px){
   .counter-section{padding:58px 20px}
   .counter-card{padding:20px 18px}
@@ -161,5 +164,5 @@ footer>div{display:flex;gap:20px;flex-wrap:wrap}
   .star-reveal{padding:30px 18px}
   .star-card-actions{align-items:stretch}
   .star-card-actions .share-button{width:100%}
-  .hero-art .label-bottom,.hero-coordinate{display:none}
+  .hero-art .label-top,.hero-art .label-bottom,.hero-coordinate{display:none}
 }
