@@ -9,7 +9,8 @@
   "vars": {
     "CLOUDFLARE_WORKER": "true",
     "RESEND_FROM_EMAIL": "ROAMA Signal Quest <info@roama.tech>",
-    "RESEND_SENDER_DOMAIN_VERIFIED": "true"
+    "RESEND_SENDER_DOMAIN_VERIFIED": "true",
+    "STAR_CLAIMS_ENABLED": "false"
   },
   "routes": [
     {

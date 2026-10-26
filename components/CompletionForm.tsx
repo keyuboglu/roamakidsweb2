@@ -42,7 +42,7 @@ export default function CompletionForm({challengeSlug,verificationEnabled}:{chal
   }
 
   if(!verificationEnabled)return <div className="claim-paused" role="status">
-    <p><strong>Star claims are temporarily paused.</strong> Email verification is not configured, so no email was collected and no star was created. Please check back later.</p>
+    <p><strong>Star claims are temporarily paused.</strong> The privacy and participant-counting model is being finalized. No email is collected and no star is created. You can still complete this challenge privately without the app.</p>
     <Link href="/privacy">Privacy information</Link>
   </div>;
 

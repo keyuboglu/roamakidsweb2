@@ -9,6 +9,7 @@ export function adultEmailDigest(email:string) {
 }
 
 export function emailVerificationConfigured() {
+  if(process.env.STAR_CLAIMS_ENABLED!=='true')return false;
   const baseUrl=process.env.NEXT_PUBLIC_SITE_URL;
   const digestSecret=process.env.ADULT_EMAIL_HASH_SECRET;
   if(!process.env.RESEND_API_KEY||!process.env.RESEND_FROM_EMAIL||process.env.RESEND_SENDER_DOMAIN_VERIFIED!=='true'||!baseUrl||!digestSecret||digestSecret.length<32)return false;

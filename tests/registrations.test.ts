@@ -89,7 +89,7 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
    expect((await prisma.campaignConfig.findUniqueOrThrow({where:{id:1},select:{starsIssued:true}})).starsIssued).toBe(1000000);
   }finally{if(before)await prisma.campaignConfig.update({where:{id:1},data:before});}
  });
- it('enforces one published campaign challenge in the database',async()=>{
+ it('enforces one published database challenge at a time',async()=>{
   await expect(prisma.challenge.create({data:{slug:`second-featured-${randomUUID()}`,title:'Second fixture',shortDescription:'Must remain unpublished',status:'PUBLISHED'}})).rejects.toMatchObject({code:'P2002'});
  });
  it('does not create an unverified star through the retired public completion endpoint',async()=>{
@@ -110,6 +110,7 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
   vi.stubEnv('RESEND_API_KEY','test-only-resend-api-key');
   vi.stubEnv('RESEND_FROM_EMAIL','Signal Quest <quest@example.test>');
   vi.stubEnv('RESEND_SENDER_DOMAIN_VERIFIED','true');
+  vi.stubEnv('STAR_CLAIMS_ENABLED','true');
   const mail=vi.fn<typeof fetch>().mockResolvedValue(new Response('{"id":"test-message"}',{status:200}));
   vi.stubGlobal('fetch',mail);
   const email=`adult-${randomUUID()}@example.test`;
@@ -179,6 +180,7 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
   vi.stubEnv('RESEND_API_KEY','test-only-resend-api-key');
   vi.stubEnv('RESEND_FROM_EMAIL','Signal Quest <quest@example.test>');
   vi.stubEnv('RESEND_SENDER_DOMAIN_VERIFIED','true');
+  vi.stubEnv('STAR_CLAIMS_ENABLED','true');
   const mail=vi.fn<typeof fetch>().mockResolvedValue(new Response('{"id":"test-message"}',{status:200}));
   vi.stubGlobal('fetch',mail);
   const email=`expiry-${randomUUID()}@example.test`;
@@ -226,6 +228,7 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
   vi.stubEnv('RESEND_API_KEY','');
   vi.stubEnv('RESEND_FROM_EMAIL','');
   vi.stubEnv('RESEND_SENDER_DOMAIN_VERIFIED','false');
+  vi.stubEnv('STAR_CLAIMS_ENABLED','false');
   const mail=vi.fn<typeof fetch>();
   vi.stubGlobal('fetch',mail);
   const email=`paused-${randomUUID()}@example.test`;

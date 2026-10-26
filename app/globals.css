@@ -166,3 +166,23 @@ footer>div{display:flex;gap:20px;flex-wrap:wrap}
   .star-card-actions .share-button{width:100%}
   .hero-art .label-top,.hero-art .label-bottom,.hero-coordinate{display:none}
 }
+.challenge-art{display:block;height:auto;background:none;line-height:0;overflow:hidden}
+.challenge-card-image{display:block;width:100%;height:auto;aspect-ratio:661/793;object-fit:contain}
+.challenge-info .challenge-index{min-height:0;margin-bottom:8px;color:#987a43;font-size:9px;letter-spacing:.16em}
+.challenge-info h3 a{color:inherit}
+.detail-art{display:block;width:min(100%,661px);height:auto;max-height:none;object-fit:contain;margin:34px auto 48px}
+.challenge-instructions{padding-left:24px;color:#dfe3ea;line-height:1.8}
+.challenge-instructions li{padding-left:6px;margin:0 0 10px}
+.challenge-note{margin:14px 0 0;color:#c6ced9;line-height:1.75}
+.detail-complete>p{line-height:1.8;color:#c6ced9}
+.claim-paused{padding:18px;border:1px solid rgba(231,195,116,.32);background:rgba(231,195,116,.06)}
+.claim-paused p{margin-bottom:10px;color:#d4dbe5;line-height:1.7}
+.claim-paused a{color:#f2d391;text-decoration:underline;text-underline-offset:3px}
+@media(max-width:800px){
+  .challenge-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+}
+@media(max-width:520px){
+  .challenge-grid{grid-template-columns:minmax(0,1fr);gap:18px}
+  .challenge-info{padding:18px}
+  .detail-art{margin:26px auto 36px}
+}

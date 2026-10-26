@@ -1,10 +1,11 @@
 # ROAMA Kids — The Great Signal Quest
 
-An adult-organized, one-time ROAMA Kids campaign built with Next.js, TypeScript, PostgreSQL, and Prisma. The browser never changes the global total directly: an adult email verification creates at most one unique star inside a database transaction, and the server returns the authoritative verified-claim count.
+An adult-organized, one-time ROAMA Kids campaign built with Next.js, TypeScript, PostgreSQL, and Prisma. The browser never changes the global total directly: when claims are enabled, an adult email verification creates at most one unique star inside a database transaction, and the server returns the authoritative verified-claim count. Star claims are currently disabled pending a final privacy-retention policy and a decision on how guardian-confirmed child participation is counted.
 
 ## Architecture
 
 - Next.js App Router renders the public campaign and challenge pages.
+- The three owner-supplied activities and their exact artwork paths are maintained in `lib/challenge-content.ts` and `public/images/challenges/`. Public cards and deep links do not depend on challenge rows existing in PostgreSQL; published database content can override copy for a matching built-in slug, while the supplied artwork remains fixed.
 - Prisma is the PostgreSQL access layer; versioned SQL lives in `prisma/migrations/`.
 - Admin passwords are bcrypt hashes. Verification uses PostgreSQL `pgcrypto` so bcrypt work does not consume Workers Free request CPU. The database must permit this extension (Neon supports it); migrations enable it. Admin sessions are signed, eight-hour, HttpOnly cookies (`Secure` in production, `SameSite=Strict`). All admin API handlers re-check that the account still exists.
 - Adult email verification uses Resend's HTTPS API. A cryptographically random, one-use token is sent only after a published challenge is selected; PostgreSQL stores only its SHA-256 hash, a keyed adult-email digest, the optional pseudonym, and a 20-minute expiry. Token consumption, one-star-per-digest enforcement, permanent number allocation, and the verified counter are transaction-safe. Email addresses are sent transiently to Resend and are not stored in the campaign database or used for marketing.
@@ -12,7 +13,7 @@ An adult-organized, one-time ROAMA Kids campaign built with Next.js, TypeScript,
 - First-party analytics store event, optional published challenge, UTM source/medium/campaign, and app-store target only. No child identity is collected.
 - The founder dashboard at `/admin` manages challenges and campaign content, targets, milestones, store URLs, and aggregate reports. CSV export contains aggregate challenge totals.
 
-The ROAMA Kids fox logo was supplied directly by the owner. The shared brand component uses an optimized local WebP, with separate PNG browser and Apple touch icons derived from the same artwork. It replaces the temporary favicon taken from [roama.tech](https://roama.tech). The iOS App Store destination was verified against that official site; the default is `https://apps.apple.com/app/roama-kids/id6815158079`. The UI also retains its original constellation art. No founder challenge tasks or participation data are seeded.
+The ROAMA Kids fox logo was supplied directly by the owner. The shared brand component uses an optimized local WebP, with separate PNG browser and Apple touch icons derived from the same artwork. It replaces the temporary favicon taken from [roama.tech](https://roama.tech). The iOS App Store destination was verified against that official site; the default is `https://apps.apple.com/app/roama-kids/id6815158079`. The UI also retains its original constellation art. Challenge instructions and artwork are bundled locally; no participation data is seeded.
 
 ## Million-star sky and public names
 
@@ -47,9 +48,9 @@ npm run db:check
 npm run dev
 ```
 
-The campaign opens at `http://localhost:3000`. No challenges are seeded: create real founder-approved challenge content in the admin after the first admin is initialized.
+The campaign opens at `http://localhost:3000` with all three public challenge pages. The default `STAR_CLAIMS_ENABLED=false` keeps verification and star creation disabled.
 
-Email claims remain unavailable until the required Resend configuration is present. Only use a sender address whose domain is currently verified in the Resend account. Do not put API keys in the repository or frontend configuration.
+Do not enable claims until the retention policy and participant-counting model are approved, in addition to verifying the Resend sender and required secrets. The current one-star-per-adult-email rule does not establish a count of unique participating children. Only use a sender address whose domain is currently verified in the Resend account. Do not put API keys in the repository or frontend configuration.
 
 ## Initialize the first admin
 
@@ -75,12 +76,13 @@ Sign in at `/admin`. Admin actions require the signed session cookie and a same-
 | `RESEND_API_KEY` | Private server-side Resend API key used only for transactional verification messages. |
 | `RESEND_FROM_EMAIL` | Sender name and address on a domain verified in the Resend account. |
 | `RESEND_SENDER_DOMAIN_VERIFIED` | Set to `true` only after confirming the sender domain is currently verified in Resend; the provider remains authoritative and rejects unverified senders. |
+| `STAR_CLAIMS_ENABLED` | Explicit opt-in for email verification and star creation; keep `false` until privacy retention and the participant-counting model are approved. |
 | `ADMIN_EMAIL` | Initial admin account email used by `npm run admin:create`. |
 | `ADMIN_PASSWORD` | Temporary initial/admin reset password; never commit or retain in deployment config longer than needed. |
 
 Store URLs are editable in the authenticated Campaign tab. Only enter the actual ROAMA Kids listings. The service does not invent a store destination.
 
-For Cloudflare, store `RESEND_API_KEY`, `ADULT_EMAIL_HASH_SECRET`, `ABUSE_HASH_SECRET`, and `SESSION_SECRET` as Worker secrets (for example with `wrangler secret put NAME`); set `RESEND_FROM_EMAIL`, `RESEND_SENDER_DOMAIN_VERIFIED=true`, and `NEXT_PUBLIC_SITE_URL` as Worker variables. Never paste secret values into chat or commit them. Set the verification flag only after confirming the sender domain remains verified in Resend, and supply the owner's approved challenge text and safety guidance before enabling participation.
+For Cloudflare, store `RESEND_API_KEY`, `ADULT_EMAIL_HASH_SECRET`, `ABUSE_HASH_SECRET`, and `SESSION_SECRET` as Worker secrets (for example with `wrangler secret put NAME`); set `RESEND_FROM_EMAIL`, `RESEND_SENDER_DOMAIN_VERIFIED=true`, and `NEXT_PUBLIC_SITE_URL` as Worker variables. Keep `STAR_CLAIMS_ENABLED=false` until the privacy and counting blockers above are resolved. Never paste secret values into chat or commit them.
 
 ## Database changes and maintenance
 
@@ -130,12 +132,12 @@ The app includes an OpenNext Cloudflare build and a daily privacy-cleanup trigge
 
 1. Create a **Neon Free** project. Save its pooled PostgreSQL URL in an ignored local `.env` as `DATABASE_URL`. Do not paste credentials into chat, commit them, or put them in `wrangler.jsonc`.
 2. Generate separate random `SESSION_SECRET` and `ABUSE_HASH_SECRET` values (32+ characters each). Set `ADMIN_EMAIL` and a unique `ADMIN_PASSWORD` (14+ characters) locally.
-3. Initialize the database with `npm run db:deploy`, `npm run db:seed`, `npm run admin:create`, and `npm run db:check`. No challenge activities or participation counts are fabricated.
+3. Initialize the database with `npm run db:deploy`, `npm run db:seed`, `npm run admin:create`, and `npm run db:check`. The three public challenge activities are bundled with the app; no participation counts are fabricated.
 4. Run `npx wrangler login`. The Worker name in `wrangler.jsonc` and its `WORKER_SELF_REFERENCE` service must match. The config retains `workers_dev: true` and declares `signalquest.roama.tech` as a Custom Domain; Wrangler provisions its DNS record and certificate on deployment, without changing the root site or email records.
 5. Upload `DATABASE_URL`, `SESSION_SECRET`, `ABUSE_HASH_SECRET`, and `ADULT_EMAIL_HASH_SECRET` as Worker secrets. Add `RESEND_API_KEY` only after creating a sending-only Resend key restricted to `roama.tech`; never paste it into source, chat, or a plain variable.
 6. Set `NEXT_PUBLIC_SITE_URL` as a Worker secret to `https://signalquest.roama.tech` and use the same value when building. `RESEND_FROM_EMAIL` and the verified-domain gate are set in `wrangler.jsonc` for the existing `info@roama.tech` sender. Keep the adult email HMAC secret stable so returning adults can recover their stars.
 7. Run `NEXT_PUBLIC_SITE_URL=https://signalquest.roama.tech npm run cf:deploy` only after the production database has been positively identified, backed up, and migrated, and the required private secrets are present. For local Workers-runtime testing use `npm run cf:preview`; supply local runtime secrets through an ignored `.dev.vars` file. Plain `next dev` and the existing Node hosting path remain available.
-8. Verify `/`, `/api/campaign`, `/privacy`, `/admin`, an authenticated admin request, and a real approved challenge's completion flow. Check Workers CPU usage, logs, and the daily cleanup trigger. Remove the temporary `ADMIN_PASSWORD` from local configuration after storing it in a password manager.
+8. Verify `/`, all three `/challenge/<slug>` pages, `/api/campaign`, `/privacy`, `/admin`, and an authenticated admin request. Star claims must remain paused until the privacy and counting blockers are resolved; do not test live email delivery while the gate is off. Check Workers CPU usage, logs, and the daily cleanup trigger. Remove the temporary `ADMIN_PASSWORD` from local configuration after storing it in a password manager.
 
 Workers Free currently allows **100,000 requests/day** and **10 ms CPU per request**. Neon Free has its own compute/storage limits and may suspend inactive compute. Database wait time does not consume Worker CPU, but Next.js SSR, Prisma, and cold requests still must be measured on the deployed Worker. Moving bcrypt to PostgreSQL removes one known CPU hotspot; a successful build or local preview alone does **not** establish that all requests fit the free quota. Do not upgrade plans automatically; quota exhaustion can interrupt availability. Consult the current [Workers limits](https://developers.cloudflare.com/workers/platform/limits/) and Neon dashboard before launch.
 
