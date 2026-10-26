@@ -104,7 +104,7 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
    const request=new NextRequest('https://roama.test/api/completions',{method:'POST',headers:{origin:'https://roama.test','content-type':'application/json'},body:JSON.stringify({challengeSlug:slug,idempotencyKey:randomUUID(),adultConfirmed:true})});
    const response=await postCompletion(request);
    expect(response.status).toBe(410);
-   expect((await response.json()).error).toMatch(/email verification/i);
+   expect((await response.json()).error).toMatch(/adult email/i);
    expect(await prisma.completion.count({where:{status:'ACCEPTED',emailVerifiedAt:{not:null}}})).toBe(before);
   }finally{vi.unstubAllEnvs();}
  });
@@ -248,6 +248,10 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
    expect((await paused.json()).error).toMatch(/no email was collected/i);
    expect(await prisma.emailVerificationToken.count({where:{challengeId}})).toBe(tokensBefore);
    expect(mail).not.toHaveBeenCalled();
+   vi.stubEnv('RESEND_API_KEY','test-only-resend-api-key');
+   vi.stubEnv('RESEND_FROM_EMAIL','Signal Quest <quest@example.test>');
+   vi.stubEnv('RESEND_SENDER_DOMAIN_VERIFIED','true');
+   vi.stubEnv('STAR_CLAIMS_ENABLED','true');
    const invalid=await verifyEmail(new NextRequest('https://roama.test/api/verification/verify',{
     method:'POST',
     headers:{origin:'https://roama.test','content-type':'application/json'},
