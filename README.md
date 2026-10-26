@@ -1,6 +1,6 @@
 # ROAMA Kids — The Great Signal Quest
 
-An adult-organized, one-time ROAMA Kids campaign built with Next.js, TypeScript, PostgreSQL, and Prisma. The browser never changes the global total directly: when claims are enabled, an adult email verification creates at most one unique star inside a database transaction, and the server returns the authoritative verified-claim count. Star claims are currently disabled pending a final privacy-retention policy and a decision on how guardian-confirmed child participation is counted.
+An adult-organized, one-time ROAMA Kids campaign built with Next.js, TypeScript, PostgreSQL, and Prisma. The browser never changes the global total directly: an adult email verification creates at most one unique star inside a database transaction, and the server returns the authoritative verified-adult-email claim count. The counter is not a count of children.
 
 ## Architecture
 
@@ -22,7 +22,7 @@ The ROAMA Kids fox logo was supplied directly by the owner. The shared brand com
 - A fictional star name is optional (40 characters maximum). Named submissions require explicit public-name acknowledgement as well as adult completion confirmation. URLs, email addresses, markup, and long numeric identifiers are rejected. Input checks cannot identify every real name or inappropriate word: the interface prohibits personal details, but names appear immediately without pre-publication moderation at the owner's request.
 - The challenge detail page collects an adult email, an optional fictional public pseudonym, and adult completion confirmation. After email verification, the reveal view offers a downloadable PNG, native share where available, a public star link, and the official App Store CTA. New and existing verified emails use the same generic request response; a verified existing email recovers its original star.
 - Public `/api/stars` returns at most 400 regional counts and 500 recent stars. Individual 50 × 50 regions return at most 2,500 public `{starNumber, starName}` records. The browser fetches at most four regions concurrently and retains at most 32 regions, not every completion. Star data refreshes approximately every 30 seconds.
-- Authenticated `/admin` → **Star names** lists named stars in pages of 50 and can remove a public name without deleting the completion or changing its number/count. The owner still needs a published removal/contact procedure and final privacy review before promotion.
+- Authenticated `/admin` → **Star names** lists named stars in pages of 50 and can remove a public name without deleting the completion or changing its number/count. Adults can contact `info@roama.tech` to request public-name removal or discuss a privacy request.
 
 ## Requirements
 
@@ -48,9 +48,9 @@ npm run db:check
 npm run dev
 ```
 
-The campaign opens at `http://localhost:3000` with all three public challenge pages. The default `STAR_CLAIMS_ENABLED=false` keeps verification and star creation disabled.
+The campaign opens at `http://localhost:3000` with all three public challenge pages. Local `.env.example` defaults `STAR_CLAIMS_ENABLED=false`; production is enabled only after its sender, secrets, database schema and challenge records are verified.
 
-Do not enable claims until the retention policy and participant-counting model are approved, in addition to verifying the Resend sender and required secrets. The current one-star-per-adult-email rule does not establish a count of unique participating children. Only use a sender address whose domain is currently verified in the Resend account. Do not put API keys in the repository or frontend configuration.
+The approved retention model keeps permanent star records and their keyed adult-email digest for the life of each star, solely to preserve recovery and one-star-per-email enforcement. The verified counter measures adult-email claims, not participating children. Only use a sender address whose domain is currently verified in the Resend account. Do not put API keys in the repository or frontend configuration.
 
 ## Initialize the first admin
 
@@ -76,13 +76,13 @@ Sign in at `/admin`. Admin actions require the signed session cookie and a same-
 | `RESEND_API_KEY` | Private server-side Resend API key used only for transactional verification messages. |
 | `RESEND_FROM_EMAIL` | Sender name and address on a domain verified in the Resend account. |
 | `RESEND_SENDER_DOMAIN_VERIFIED` | Set to `true` only after confirming the sender domain is currently verified in Resend; the provider remains authoritative and rejects unverified senders. |
-| `STAR_CLAIMS_ENABLED` | Explicit opt-in for email verification and star creation; keep `false` until privacy retention and the participant-counting model are approved. |
+| `STAR_CLAIMS_ENABLED` | Explicit opt-in for email verification and star creation; remains `false` in the local example and is enabled for production only after launch checks. |
 | `ADMIN_EMAIL` | Initial admin account email used by `npm run admin:create`. |
 | `ADMIN_PASSWORD` | Temporary initial/admin reset password; never commit or retain in deployment config longer than needed. |
 
 Store URLs are editable in the authenticated Campaign tab. Only enter the actual ROAMA Kids listings. The service does not invent a store destination.
 
-For Cloudflare, store `RESEND_API_KEY`, `ADULT_EMAIL_HASH_SECRET`, `ABUSE_HASH_SECRET`, and `SESSION_SECRET` as Worker secrets (for example with `wrangler secret put NAME`); set `RESEND_FROM_EMAIL`, `RESEND_SENDER_DOMAIN_VERIFIED=true`, and `NEXT_PUBLIC_SITE_URL` as Worker variables. Keep `STAR_CLAIMS_ENABLED=false` until the privacy and counting blockers above are resolved. Never paste secret values into chat or commit them.
+For Cloudflare, store `RESEND_API_KEY`, `ADULT_EMAIL_HASH_SECRET`, `ABUSE_HASH_SECRET`, and `SESSION_SECRET` as Worker secrets (for example with `wrangler secret put NAME`); set `RESEND_FROM_EMAIL`, `RESEND_SENDER_DOMAIN_VERIFIED=true`, and `NEXT_PUBLIC_SITE_URL` as Worker variables. Never paste secret values into chat or commit them.
 
 ## Database changes and maintenance
 
@@ -137,7 +137,7 @@ The app includes an OpenNext Cloudflare build and a daily privacy-cleanup trigge
 5. Upload `DATABASE_URL`, `SESSION_SECRET`, `ABUSE_HASH_SECRET`, and `ADULT_EMAIL_HASH_SECRET` as Worker secrets. Add `RESEND_API_KEY` only after creating a sending-only Resend key restricted to `roama.tech`; never paste it into source, chat, or a plain variable.
 6. Set `NEXT_PUBLIC_SITE_URL` as a Worker secret to `https://signalquest.roama.tech` and use the same value when building. `RESEND_FROM_EMAIL` and the verified-domain gate are set in `wrangler.jsonc` for the existing `info@roama.tech` sender. Keep the adult email HMAC secret stable so returning adults can recover their stars.
 7. Run `NEXT_PUBLIC_SITE_URL=https://signalquest.roama.tech npm run cf:deploy` only after the production database has been positively identified, backed up, and migrated, and the required private secrets are present. For local Workers-runtime testing use `npm run cf:preview`; supply local runtime secrets through an ignored `.dev.vars` file. Plain `next dev` and the existing Node hosting path remain available.
-8. Verify `/`, all three `/challenge/<slug>` pages, `/api/campaign`, `/privacy`, `/admin`, and an authenticated admin request. Star claims must remain paused until the privacy and counting blockers are resolved; do not test live email delivery while the gate is off. Check Workers CPU usage, logs, and the daily cleanup trigger. Remove the temporary `ADMIN_PASSWORD` from local configuration after storing it in a password manager.
+8. Verify `/`, all three `/challenge/<slug>` pages, `/api/campaign`, `/privacy`, `/admin`, and an authenticated admin request. Confirm the sender and privacy disclosures, then check Workers CPU usage, logs, and the daily cleanup trigger. Remove the temporary `ADMIN_PASSWORD` from local configuration after storing it in a password manager.
 
 Workers Free currently allows **100,000 requests/day** and **10 ms CPU per request**. Neon Free has its own compute/storage limits and may suspend inactive compute. Database wait time does not consume Worker CPU, but Next.js SSR, Prisma, and cold requests still must be measured on the deployed Worker. Moving bcrypt to PostgreSQL removes one known CPU hotspot; a successful build or local preview alone does **not** establish that all requests fit the free quota. Do not upgrade plans automatically; quota exhaustion can interrupt availability. Consult the current [Workers limits](https://developers.cloudflare.com/workers/platform/limits/) and Neon dashboard before launch.
 
@@ -174,13 +174,13 @@ Cloudflare and Neon are connected for the preview described above; the Netlify a
 
 ## Privacy and launch review
 
-The `/privacy` page is an explicit draft of this implementation, not a claim of legal compliance. Before international launch, the owner must add its legal identity and contact, review the rules for each market, decide on analytics disclosure/consent, document data-subject requests, configure and verify cleanup scheduling, and assess database/backup retention. Adult confirmation is a report of completion, not independent verification or universal legal parental consent.
+The `/privacy` page describes this implementation and is not a claim of legal compliance. The campaign operator should review applicable rules for each market, analytics disclosures, data-subject requests and provider backup retention. Adult confirmation is a report of completion, not independent verification or universal legal parental consent.
 
 Rate limits reduce automated bursts; they cannot prove that an activity occurred. Trust only proxy-supplied client address headers and configure the hosting proxy to strip untrusted incoming copies. Review aggregate suspicious-key counts as signals, not proof. No CAPTCHA is configured. There are no child accounts, uploads, comments, profile pages, or precise-location fields.
 
 ## Current limitations
 
 - Docker is optional when using Neon. Database integration tests still require a separate database whose name contains `test`; never use the live campaign database for tests.
-- Founder-approved challenge content, private Worker secrets, positive production database identification, campaign legal identity/contact, and final privacy review are still required. The Resend dashboard confirms `roama.tech` is verified and a previous message from `info@roama.tech` was delivered, but the campaign Worker has no Resend API key or adult-email HMAC secret, so campaign email delivery remains disabled and unverified. Official branding and the iOS App Store link are connected; no Android store URL has been verified.
+- Cloudflare Worker secrets are configured for Resend delivery, database access, abuse protection and adult-email hashing. The production Resend domain `roama.tech` is verified; a live transactional delivery check is required after changes. Official branding and the iOS App Store link are connected; no Android store URL has been verified.
 - Analytics source attribution is stored, but reports currently show aggregate event totals rather than detailed campaign-source breakdowns.
 - Abuse-rate limits are database-backed and Cloudflare client addresses are supported, but CAPTCHA and live abuse/load validation remain deployment tasks.

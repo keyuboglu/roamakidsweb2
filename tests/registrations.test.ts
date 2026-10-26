@@ -89,8 +89,13 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
    expect((await prisma.campaignConfig.findUniqueOrThrow({where:{id:1},select:{starsIssued:true}})).starsIssued).toBe(1000000);
   }finally{if(before)await prisma.campaignConfig.update({where:{id:1},data:before});}
  });
- it('enforces one published database challenge at a time',async()=>{
-  await expect(prisma.challenge.create({data:{slug:`second-featured-${randomUUID()}`,title:'Second fixture',shortDescription:'Must remain unpublished',status:'PUBLISHED'}})).rejects.toMatchObject({code:'P2002'});
+ it('allows all campaign challenges to be published at the same time',async()=>{
+  const second=await prisma.challenge.create({data:{slug:`second-featured-${randomUUID()}`,title:'Second fixture',shortDescription:'Published fixture',status:'PUBLISHED'}});
+  try{
+   expect(await prisma.challenge.count({where:{status:'PUBLISHED',slug:{in:[slug,second.slug]}}})).toBe(2);
+  }finally{
+   await prisma.challenge.delete({where:{id:second.id}});
+  }
  });
  it('does not create an unverified star through the retired public completion endpoint',async()=>{
   vi.stubEnv('NEXT_PUBLIC_SITE_URL','https://roama.test');
@@ -98,7 +103,7 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
    const before=await prisma.completion.count({where:{status:'ACCEPTED',emailVerifiedAt:{not:null}}});
    const request=new NextRequest('https://roama.test/api/completions',{method:'POST',headers:{origin:'https://roama.test','content-type':'application/json'},body:JSON.stringify({challengeSlug:slug,idempotencyKey:randomUUID(),adultConfirmed:true})});
    const response=await postCompletion(request);
-   expect(response.status).toBe(503);
+   expect(response.status).toBe(410);
    expect((await response.json()).error).toMatch(/email verification/i);
    expect(await prisma.completion.count({where:{status:'ACCEPTED',emailVerifiedAt:{not:null}}})).toBe(before);
   }finally{vi.unstubAllEnvs();}

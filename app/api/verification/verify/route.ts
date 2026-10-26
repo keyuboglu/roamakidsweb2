@@ -1,6 +1,7 @@
 import {createHash} from 'node:crypto';
 import {NextRequest,NextResponse} from 'next/server';
 import {z} from 'zod';
+import {emailVerificationConfigured} from '@/lib/email-verification';
 import {redeemEmailVerificationToken} from '@/lib/registrations';
 import {abuseKey,rateLimit} from '@/lib/rate-limit';
 import {isSameOrigin} from '@/lib/session';
@@ -9,6 +10,9 @@ const schema=z.object({token:z.string().regex(/^[a-f0-9]{64}$/i)});
 
 export async function POST(req:NextRequest) {
   if(!isSameOrigin(req))return NextResponse.json({error:'Request origin rejected.'},{status:403});
+  if(!emailVerificationConfigured()){
+    return NextResponse.json({error:'Adult email verification is not configured yet. No email was collected and no star was created.'},{status:503});
+  }
   let body:unknown;
   try {
     body=await req.json();
