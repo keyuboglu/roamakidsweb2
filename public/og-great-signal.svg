@@ -1,6 +1,6 @@
 <svg xmlns="http://www.w3.org/2000/svg" width="1200" height="630" viewBox="0 0 1200 630" role="img" aria-labelledby="title desc">
-  <title id="title">A Million Stars. One Global Quest.</title>
-  <desc id="desc">The Great Signal Quest by ROAMA Kids</desc>
+  <title id="title">ROAMA Signal Quest — Three Creative Family Challenges</title>
+  <desc id="desc">Screen-free shadow, discovery and balancing challenges for families by ROAMA Kids.</desc>
   <defs>
     <radialGradient id="glow"><stop stop-color="#e7c374" stop-opacity=".24"/><stop offset="1" stop-color="#0b1426" stop-opacity="0"/></radialGradient>
     <linearGradient id="line"><stop stop-color="#e7c374" stop-opacity=".18"/><stop offset=".5" stop-color="#e7c374" stop-opacity=".65"/><stop offset="1" stop-color="#e7c374" stop-opacity=".15"/></linearGradient>
@@ -13,6 +13,6 @@
   <text x="92" y="110" fill="#e7c374" font-family="Arial,sans-serif" font-size="17" letter-spacing="5">ROAMA KIDS · THE GREAT SIGNAL QUEST</text>
   <text x="88" y="285" fill="#f5f0e6" font-family="Georgia,serif" font-size="76">A million stars.</text>
   <text x="88" y="375" fill="#e7c374" font-family="Georgia,serif" font-size="76" font-style="italic">One global quest.</text>
-  <text x="93" y="453" fill="#c2c9d3" font-family="Arial,sans-serif" font-size="22">Complete a challenge. Add your star. Help build something bigger.</text>
+  <text x="93" y="453" fill="#c2c9d3" font-family="Arial,sans-serif" font-size="22">Three screen-free challenges. No app required.</text>
   <rect x="92" y="515" width="104" height="3" fill="#e7c374"/>
 </svg>

@@ -186,3 +186,9 @@ footer>div{display:flex;gap:20px;flex-wrap:wrap}
   .challenge-info{padding:18px}
   .detail-art{margin:26px auto 36px}
 }
+.challenge-facts dl{display:grid;gap:14px;margin:0}
+.challenge-facts dl>div{display:grid;grid-template-columns:minmax(90px,120px) 1fr;gap:16px}
+.challenge-facts dt{color:var(--gold);font-size:12px;letter-spacing:.08em;text-transform:uppercase}
+.challenge-facts dd{margin:0;color:#bac3ce;line-height:1.8;font-size:14px}
+.detail-page section p strong{color:var(--cream);font-weight:600}
+.detail-page section .challenge-interest{margin-top:18px}

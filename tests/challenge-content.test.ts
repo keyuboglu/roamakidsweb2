@@ -20,7 +20,9 @@ describe('campaign challenges',()=>{
     expect(campaignChallenges[0].safety).toContain('candles');
     expect(campaignChallenges[1].safety).toContain('unknown insects');
     expect(campaignChallenges[2].safety).toContain('glassware');
-    expect(campaignChallenges.every(challenge=>challenge.instructions.includes('Optional sharing prompt:'))).toBe(true);
+    expect(campaignChallenges.every(challenge=>challenge.optionalSharingPrompt.length>0)).toBe(true);
+    expect(campaignChallenges.every(challenge=>challenge.ageGuidance.ages6to8&&challenge.ageGuidance.ages9to12)).toBe(true);
+    expect(campaignChallenges.every(challenge=>challenge.estimatedTime&&challenge.materials&&challenge.imageAlt)).toBe(true);
   });
 
   it('uses a known challenge image over any stored fallback and preserves unknown challenge art',()=>{
