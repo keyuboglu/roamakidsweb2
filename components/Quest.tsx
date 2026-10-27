@@ -42,14 +42,32 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
   const count=data.count;
   const progress=count===null?0:Math.min(count/data.goal*100,100);
   const litStars=count===null?0:Math.round(progress/100*28);
-  const headline=data.headline||'A million stars. One global quest.';
-  const sentences=headline.match(/^(.+?[.!?])\s+(.+)$/);
   const ios=OFFICIAL_IOS_STORE_URL;
   const android=data.androidStoreUrl;
+  const headline=data.headline||'A MILLION STARS. ONE GLOBAL QUEST.';
+  const headlineSentences=headline.match(/^(.+?[.!?])\s+(.+)$/);
+  const challengePresentation:Record<string,{title:string;defaultTitle:string;description:string;defaultDescription:string;alt:string;accent:string}>={
+    'shadow-signal':{title:'SHADOW SIGNAL',defaultTitle:'The Shadow Signal',description:'Discover the magic of light and shadows.',defaultDescription:'Can you make something ordinary look impossible?',alt:'A child uses a small light to cast a playful creature-shaped shadow on a wall.',accent:'violet'},
+    'micro-world-safari':{title:'MICRO-WORLD SAFARI',defaultTitle:'The Micro-World Safari',description:'Explore the tiny wonders around you.',defaultDescription:'What if you looked a little closer?',alt:'A child looks through a magnifying glass at the detailed veins of a green leaf.',accent:'green'},
+    'gravity-defier':{title:'GRAVITY DEFIER',defaultTitle:'The Gravity Defier',description:'Experiment, discover, and challenge gravity.',defaultDescription:'Can you balance three objects in a way that looks impossible?',alt:'A child carefully balances light household objects in a surprising stack.',accent:'blue'},
+  };
 
   useEffect(()=>{
     const attribution=readAttribution(location.search);
     void fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:'page_view',...attributionFields(attribution)})}).catch(error=>console.warn('Page analytics unavailable.',error));
+  },[]);
+
+  useEffect(()=>{
+    const section=document.querySelector('.star-journey');
+    if(!section)return;
+    const observer=new IntersectionObserver(entries=>{
+      if(entries.some(entry=>entry.isIntersecting)){
+        section.classList.add('is-visible');
+        observer.disconnect();
+      }
+    },{threshold:.2});
+    observer.observe(section);
+    return ()=>observer.disconnect();
   },[]);
 
   function preserveChallengeAttribution(event:React.MouseEvent<HTMLElement>) {
@@ -72,17 +90,87 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
   }
 
   return <main>
-    <header className="topbar"><Brand/><nav><Link href="/stars">A million stars</Link><a href="#challenges">Choose a challenge</a><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">ROAMA Kids ↗</a></nav><a className="nav-cta" href="#challenges">Choose your challenge <span>↗</span></a></header>
-    <section className="hero" id="top"><div className="hero-copy"><p className="eyebrow"><span className="eyebrow-dot"/> A WORLDWIDE ADVENTURE</p><h1>{sentences?<>{sentences[1]}<br/><em>{sentences[2]}</em></>:headline}</h1><p className="hero-lede">{data.description||'Three real-world challenges. Infinite ways to surprise yourself. Choose any one and try it with your family. Participation is private by default; no app download is needed.'}</p><div className="hero-actions"><a className="button button-gold" href="#challenges">Choose your challenge <span>↘</span></a><Link className="text-link" href="/stars">Explore the star map <span>→</span></Link></div><p className="hero-note"><span className="tiny-star">✦</span> Complete a challenge offline. Sharing is always optional.</p></div><div className="hero-art"><div className="orbit orbit-a"/><div className="orbit orbit-b"/><div className="art-label label-top">SIGNAL 01 <span>✦</span></div><Stars/><div className="art-label label-bottom">SOMEWHERE, A NEW STORY BEGINS</div><span className="hero-coordinate">A SHARED ADVENTURE</span></div><div className="hero-index"><span>01</span><span className="index-line"/><span>{(data.title||'THE GREAT SIGNAL QUEST').toUpperCase()}</span></div></section>
-    <section className="counter-section" aria-labelledby="counter-title"><div className="counter-intro"><p className="eyebrow">OUR SHARED JOURNEY</p><h2 id="counter-title">Every discovery<br/>leaves a little light.</h2><p>Each star is counted once, after its adult organizer verifies their email.</p><Link className="counter-map-link" href="/stars">See the million-star sky ↗</Link></div><div className="counter-card"><div className="counter-head"><span>VERIFIED ADULT STAR CLAIMS</span><span className="live"><i/> LIVE COUNT</span></div><div className="count-line" aria-live="polite" aria-atomic="true"><strong>{count===null?'—':count.toLocaleString('en-US')}</strong><span>/ {data.goal.toLocaleString('en-US')} stars</span></div>{count!==null?<div className="progress-track" role="progressbar" aria-label="Verified adult-email star claims toward the campaign target" aria-valuemin={0} aria-valuemax={data.goal} aria-valuenow={Math.min(count,data.goal)}><span style={{width:`${progress}%`}}/></div>:<div className="counter-unavailable" aria-hidden="true"/>}<div className="progress-label"><span>{status==='error'?'The live count is temporarily unavailable':`${progress.toFixed(progress<1?2:1)}% OF OUR GOAL`}</span><span>{data.goal.toLocaleString('en-US')}</span></div>{status==='error'&&<button className="retry" onClick={()=>void refresh()}>Try again</button>}<div className="mini-constellation" aria-hidden="true">{Array.from({length:28},(_,index)=><span key={index} style={{left:`${(index*37+9)%97}%`,top:`${(index*23+14)%80}%`,opacity:index<litStars?0.78:0.08}}/>)}<div className="mini-message">A constellation<br/>in the making.</div></div><p className="count-foot">One permanent star per verified adult email. No visits or unverified submissions are counted.</p></div></section>
-    <section className="challenge-section" id="challenges" onClick={preserveChallengeAttribution}><div className="section-heading"><div><p className="eyebrow">PICK YOUR ADVENTURE</p><h2>Choose a challenge.</h2></div><p>Choose any one. Try it together, with no app or public post required.</p></div>{data.challenges.length?<><div className="challenge-grid">{data.challenges.slice(0,3).map((challenge,index)=><article className="challenge-card" key={challenge.slug}><Link className="challenge-art" href={`/challenge/${challenge.slug}`} aria-label={`Explore ${challenge.title}`}><Image className="challenge-card-image" src={challenge.imageUrl||'/og-great-signal.svg'} alt="" width={661} height={793} unoptimized/></Link><div className="challenge-info"><p className="challenge-index">SIGNAL 0{index+1}</p><h3><Link href={`/challenge/${challenge.slug}`}>{challenge.title}</Link></h3><p>{challenge.shortDescription}</p><Link className="card-link" href={`/challenge/${challenge.slug}`}>Explore challenge <span>↗</span></Link></div></article>)}</div>{status==='error'&&<p className="campaign-data-notice" role="status">The live star count is temporarily unavailable. Challenge instructions remain available.</p>}</>:<div className="empty-challenges" id="challenge-status" role="status"><span className="empty-spark">✦</span><div><h3>The challenges are temporarily unavailable.</h3><p>Challenge instructions will be shown here when campaign data is available. No participation is recorded by this page.</p><Link className="card-link" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer">Discover ROAMA Kids on the App Store ↗</Link></div><span className="empty-tag">CHECK BACK SOON</span></div>}</section>
-    <section className="how-section" id="how"><div className="how-title"><p className="eyebrow">SIMPLE AS THAT</p><h2>One adventure.<br/><em>One little light.</em></h2></div><div className="steps">{[['01','Choose any one challenge','Pick one of the three activities; there is no need to complete all three.'],['02','Try it offline together','Follow the safety guidance. No app, photo, video or public post is required.'],['03','Keep sharing optional','Enjoy the activity privately or invite another family to try it.'],['04','Verify an adult email','An adult can claim one permanent star after a challenge. The counter counts verified adult emails, not children.']].map(([number,title,copy])=><div className="step" key={number}><span className="step-number">{number}</span><div><h3>{title}</h3><p>{copy}</p></div><span className="step-star">✦</span></div>)}</div></section>
+    <header className="topbar">
+      <Brand/>
+      <nav aria-label="Main navigation">
+        <a href="#top">The Quest</a>
+        <a href="#challenges">Challenges</a>
+        <a href="#how">How It Works</a>
+        <a href="#parents">For Parents</a>
+      </nav>
+      <div className="topbar-actions">
+        <a className="nav-cta nav-cta-store" href={ios} target="_blank" rel="noreferrer" aria-label="Download ROAMA Kids from the App Store" onClick={()=>trackStoreClick('ios')}><span className="nav-store-full">Download App Store</span><span className="nav-store-short">App Store</span> ↗</a>
+        <a className="nav-cta nav-cta-join" href="#challenges">Join the Quest <span>↗</span></a>
+      </div>
+    </header>
+    <section className="hero" id="top">
+      <div className="hero-copy">
+        <p className="eyebrow"><span className="eyebrow-dot"/> ROAMA KIDS PRESENTS · {(data.title||'THE GREAT SIGNAL QUEST').toUpperCase()}</p>
+        <h1>{headlineSentences?<>{headlineSentences[1]}<br/><em>{headlineSentences[2]}</em></>:headline}</h1>
+        <p className="hero-lede">{data.description||'Explore the real world, complete a challenge, and earn your star in the ROAMA Kids universe.'}</p>
+        <div className="hero-actions"><a className="button button-gold" href="#challenges">CHOOSE YOUR ADVENTURE <span>↘</span></a><Link className="text-link" href="/stars">Explore the star map <span>→</span></Link></div>
+        <p className="hero-note"><span className="tiny-star">✦</span> A million children is our mission—not a current count.</p>
+      </div>
+      <div className="hero-scene" role="img" aria-label="Original ROAMA challenge artwork under a glowing constellation">
+        <Stars/>
+        <span className="scene-star scene-star-one" aria-hidden="true">✦</span>
+        <span className="scene-star scene-star-two" aria-hidden="true">✧</span>
+        <div className="scene-island island-one" aria-hidden="true"/>
+        <div className="scene-island island-two" aria-hidden="true"/>
+        <figure className="hero-artwork hero-artwork-shadow"><Image src="/images/challenges/shadow-signal.png" alt="" width={661} height={793} priority unoptimized/></figure>
+        <figure className="hero-artwork hero-artwork-micro"><Image src="/images/challenges/micro-world-safari.png" alt="" width={661} height={793} loading="lazy" unoptimized/></figure>
+        <figure className="hero-artwork hero-artwork-gravity"><Image src="/images/challenges/gravity-defier.png" alt="" width={661} height={793} loading="lazy" unoptimized/></figure>
+        <span className="scene-caption">REAL-WORLD CURIOSITY · ROAMA KIDS ADVENTURE</span>
+      </div>
+    </section>
+    <section className="challenge-section" id="challenges" onClick={preserveChallengeAttribution} aria-labelledby="challenge-heading">
+      <div className="section-heading"><div><p className="eyebrow">THREE MISSIONS · ONE BIG WORLD</p><h2 id="challenge-heading">Choose your adventure.</h2></div><p>Pick one mission. Explore together with your grown-up.</p></div>
+      {data.challenges.length?<><div className="challenge-grid">{data.challenges.slice(0,3).map((challenge,index)=>{
+        const presentation=challengePresentation[challenge.slug];
+        if(!presentation)return null;
+        const title=challenge.title===presentation.defaultTitle?presentation.title:challenge.title.replace(/^The\s+/i,'').toUpperCase();
+        const description=challenge.shortDescription===presentation.defaultDescription?presentation.description:challenge.shortDescription;
+        return <article className={`challenge-card challenge-card-${presentation.accent}`} key={challenge.slug}>
+          <Link className="challenge-card-link" href={`/challenge/${challenge.slug}`} aria-label={`${title}: ${description} Start challenge`}>
+            <span className="challenge-card-image-wrap"><Image className="challenge-card-image" src={challenge.imageUrl||'/og-great-signal.svg'} alt={presentation.alt} width={661} height={793} unoptimized/></span>
+            <span className="challenge-info"><span className="challenge-index">MISSION 0{index+1}</span><span className="challenge-title">{title}</span><span className="challenge-description">{description}</span><span className="card-link">START CHALLENGE <span aria-hidden="true">↗</span></span></span>
+          </Link>
+        </article>;
+      })}</div>{status==='error'&&<p className="campaign-data-notice" role="status">The live star count is temporarily unavailable. Challenge instructions remain available.</p>}</>:<div className="empty-challenges" id="challenge-status" role="status"><span className="empty-spark">✦</span><div><h3>The challenges are temporarily unavailable.</h3><p>Challenge instructions will be shown here when campaign data is available. No participation is recorded by this page.</p><Link className="card-link" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer">Discover ROAMA Kids on the App Store ↗</Link></div><span className="empty-tag">CHECK BACK SOON</span></div>}
+    </section>
+    <section className="how-section" id="how" aria-labelledby="how-heading">
+      <div className="how-title"><p className="eyebrow">A LITTLE ADVENTURE GOES A LONG WAY</p><h2 id="how-heading">HOW IT<br/><em>WORKS</em></h2><p>Simple steps. Big discoveries.</p></div>
+      <div className="steps">
+        {[['01','CHOOSE A CHALLENGE','Pick your favorite mission and get the details.'],['02','EXPLORE THE REAL WORLD','Try the activity with your grown-up.'],['03','EARN YOUR STAR IN ROAMA KIDS','Your discovery becomes part of the adventure. An adult organizer verifies their email; the star celebrates the child’s completed challenge.']].map(([number,title,copy])=><div className="step" key={number}><span className="step-number">{number}</span><div><h3>{title}</h3><p>{copy}</p></div><span className="step-star" aria-hidden="true">✦</span></div>)}
+      </div>
+    </section>
+    <section className="star-journey" aria-labelledby="star-journey-heading">
+      <div className="journey-heading"><p className="eyebrow">A REAL-WORLD DISCOVERY, A ROAMA KIDS STORY</p><h2 id="star-journey-heading">YOUR DISCOVERY<br/><em>BECOMES A STAR</em></h2><p>Every completed challenge adds to the ROAMA Kids adventure story.</p></div>
+      <div className="journey-track" aria-label="Illustration of a child completing a challenge, a star symbolizing the achievement, and that star joining a constellation">
+        <article className="journey-stage"><span className="journey-art"><Image src="/images/challenges/micro-world-safari.png" alt="" width={661} height={793} loading="lazy" unoptimized/></span><span className="journey-step-label">01 · DISCOVER</span><h3>Explore beyond the screen.</h3></article>
+        <span className="journey-connector" aria-hidden="true">→</span>
+        <article className="journey-stage journey-stage-star"><span className="journey-star" aria-hidden="true">✦</span><span className="journey-step-label">02 · CELEBRATE</span><h3>A star marks the achievement.</h3></article>
+        <span className="journey-connector" aria-hidden="true">→</span>
+        <article className="journey-stage journey-stage-sky"><span className="journey-constellation" aria-hidden="true"><i/><i/><i/><i/><i/></span><span className="journey-step-label">03 · BELONG</span><h3>Join the ROAMA Kids universe.</h3></article>
+      </div>
+      <p className="journey-disclaimer">A visual story—not a live reward or activity tracker.</p>
+    </section>
+    <section className="counter-section" aria-labelledby="counter-title">
+      <div className="counter-intro"><p className="eyebrow">OUR SHARED JOURNEY</p><h2 id="counter-title">Every discovery<br/>leaves a little light.</h2><p>Only completed challenges with a verified adult organizer email are counted as permanent stars.</p><Link className="counter-map-link" href="/stars">See the million-star sky ↗</Link></div>
+      <div className="counter-card"><div className="counter-head"><span>VERIFIED ADULT STAR CLAIMS</span><span className="live"><i/> LIVE COUNT</span></div><div className="count-line" aria-live="polite" aria-atomic="true"><strong>{count===null?'—':count.toLocaleString('en-US')}</strong><span>/ {data.goal.toLocaleString('en-US')} stars</span></div>{count!==null?<div className="progress-track" role="progressbar" aria-label="Verified adult-email star claims toward the campaign target" aria-valuemin={0} aria-valuemax={data.goal} aria-valuenow={Math.min(count,data.goal)}><span style={{width:`${progress}%`}}/></div>:<div className="counter-unavailable" aria-hidden="true"/>}<div className="progress-label"><span>{status==='error'?'The live count is temporarily unavailable':`${progress.toFixed(progress<1?2:1)}% OF OUR GOAL`}</span><span>{data.goal.toLocaleString('en-US')}</span></div>{status==='error'&&<button className="retry" onClick={()=>void refresh()}>Try again</button>}<div className="mini-constellation" aria-hidden="true">{Array.from({length:28},(_,index)=><span key={index} style={{left:`${(index*37+9)%97}%`,top:`${(index*23+14)%80}%`,opacity:index<litStars?0.78:0.08}}/>)}<div className="mini-message">A constellation<br/>in the making.</div></div><p className="count-foot">One permanent star per verified adult email. No visits or unverified submissions are counted.</p></div>
+    </section>
+    <section className="parent-section" id="parents" aria-labelledby="parents-heading">
+      <div className="parent-visual"><Image src="/roama-logo.webp" alt="Official ROAMA Kids fox logo" width={192} height={192} unoptimized/><span className="parent-visual-star" aria-hidden="true">✦</span><span className="parent-visual-caption">CURIOUS TOGETHER</span></div>
+      <div className="parent-copy"><p className="eyebrow">A NOTE FOR GROWN-UPS</p><h2 id="parents-heading">ADVENTURES TO<br/><em>EXPLORE TOGETHER</em></h2><p>ROAMA Signal Quest encourages children to explore the world around them through simple, real-world activities.</p><ul><li>Everyday materials and accessible activities.</li><li>Adult support and supervision during challenges.</li><li>Curiosity, creativity, and discovery.</li><li>A thoughtful balance between app adventures and real-world exploration.</li></ul><div className="parent-actions"><a className="button button-gold" href={ios} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios')}>ROAMA KIDS ON THE APP STORE ↗</a>{android&&<a className="text-link" href={android} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('android')}>Google Play <span>↗</span></a>}<Link className="text-link" href="/privacy">Privacy information <span>→</span></Link></div><p className="bridge-foot">No app download, photo, video or public post is needed to join a challenge.</p></div>
+    </section>
+    <section className="global-mission" aria-labelledby="global-mission-heading">
+      <div className="mission-constellation" aria-hidden="true"><svg viewBox="0 0 360 260"><circle cx="180" cy="130" r="95"/><ellipse cx="180" cy="130" rx="42" ry="95"/><path d="M86 130h188M105 83q75 43 150 0M105 177q75-43 150 0M73 198l52-58 52 24 61-87 50 42"/></svg><span className="mission-star mission-star-a">✦</span><span className="mission-star mission-star-b">✦</span><span className="mission-star mission-star-c">✦</span></div>
+      <div className="mission-copy"><p className="eyebrow">A BRIGHTER, MORE CURIOUS TOMORROW</p><h2 id="global-mission-heading">HELP US INSPIRE<br/><em>ONE MILLION CHILDREN</em></h2><p>Together, we can encourage children everywhere to explore, experiment, and discover beyond the screen.</p><p className="mission-slogan">A MILLION STARS. ONE GLOBAL QUEST.</p><a className="button button-gold" href="#challenges">CHOOSE YOUR CHALLENGE <span>↗</span></a></div>
+    </section>
     <section className="milestone-section"><div><p className="eyebrow">A SKY WE BUILD TOGETHER</p><h2>Every star takes<br/>us somewhere new.</h2><p className="milestone-copy">A million is our destination. The milestones along the way will open new chapters of the quest.</p><Link className="text-link" href="/stars">Find your place in the sky →</Link></div><div className="milestone-list">{(data.milestones?.length?data.milestones:[100,1000,10000,100000,1000000]).map((raw,index)=>{
       const milestone=typeof raw==='number'?{threshold:raw,label:index===4?'THE GREAT SIGNAL':'STARS'}:raw;
       return <div className={`milestone ${count!==null&&count>=milestone.threshold?'reached':''}`} key={milestone.threshold}><span className="milestone-star">✦</span><span className="milestone-number">{milestone.threshold.toLocaleString('en-US')}</span><span className="milestone-label">{milestone.label}</span><span className="milestone-status">{count!==null&&count>=milestone.threshold?'REACHED':'AHEAD'}</span></div>;
     })}</div></section>
-    <section className="bridge-section" id="about"><div className="bridge-orbit"><div className="bridge-core"><Image src="/roama-logo.webp" alt="ROAMA Kids official logo" width={96} height={96} unoptimized/><svg className="bridge-core-star" viewBox="0 0 100 100" aria-hidden="true"><path d="m50 4 12 31 34 2-26 22 9 33-29-18-29 18 9-33L4 37l34-2z"/></svg></div><svg className="bridge-star b1" viewBox="0 0 100 100" aria-hidden="true"><path d="m50 4 12 31 34 2-26 22 9 33-29-18-29 18 9-33L4 37l34-2z"/></svg><svg className="bridge-star b2" viewBox="0 0 100 100" aria-hidden="true"><path d="m50 4 12 31 34 2-26 22 9 33-29-18-29 18 9-33L4 37l34-2z"/></svg><svg className="bridge-star b3" viewBox="0 0 100 100" aria-hidden="true"><path d="m50 4 12 31 34 2-26 22 9 33-29-18-29 18 9-33L4 37l34-2z"/></svg></div><div className="bridge-copy"><p className="eyebrow">MEET ROAMA KIDS</p><h2>Your discovery<br/>is just the <em>beginning.</em></h2><p>Discover real-world adventures with Pip in ROAMA Kids. Follow your curiosity, then put the screen down and explore together.</p><div className="store-actions"><a className="store-button" href={ios} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios')}><span>Download on the<br/><b>App Store ↗</b></span></a>{android&&<a className="store-button" href={android} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('android')}><span>Find it on<br/><b>Google Play ↗</b></span></a>}</div><p><a className="text-link" href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">Visit the official ROAMA Kids website ↗</a></p><p className="bridge-foot">The quest is for everyone. No app download needed to take part.</p></div></section>
-    <section className="closing"><div className="closing-stars" aria-hidden="true"><svg viewBox="0 0 100 100"><path d="m50 4 12 31 34 2-26 22 9 33-29-18-29 18 9-33L4 37l34-2z"/></svg><span>·</span><svg viewBox="0 0 100 100"><path d="m50 4 12 31 34 2-26 22 9 33-29-18-29 18 9-33L4 37l34-2z"/></svg><span>·</span><svg viewBox="0 0 100 100"><path d="m50 4 12 31 34 2-26 22 9 33-29-18-29 18 9-33L4 37l34-2z"/></svg></div><p className="eyebrow">THE WORLD IS FULL OF SIGNALS</p><h2>One little light.</h2><p>Complete a challenge, then verify an adult email to claim one permanent star. Sharing is always optional.</p><a className="button button-gold" href="#challenges">Choose any challenge <span>↘</span></a></section>
-    <footer><Brand/><span>THE GREAT SIGNAL QUEST · ONE WORLD, A MILLION STORIES</span><div><Link href="/stars">Our million-star sky</Link><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">roama.tech ↗</a><Link href="/privacy">Privacy information</Link></div></footer>
+    <footer><Brand/><span>ROAMA SIGNAL QUEST · A MILLION STARS. ONE GLOBAL QUEST.</span><div><Link href="/stars">Explore the star map</Link><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">roama.tech ↗</a><Link href="/privacy">Privacy information</Link></div></footer>
   </main>;
 }
