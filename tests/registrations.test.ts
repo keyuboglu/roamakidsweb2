@@ -1,6 +1,7 @@
 import {afterAll,beforeAll,describe,expect,it,vi} from 'vitest';import {createHash,randomUUID} from 'node:crypto';import {NextRequest} from 'next/server';import {prisma} from '@/lib/prisma';import {adultEmailDigest} from '@/lib/email-verification';import {registerVerifiedCompletion} from '@/lib/registrations';import {rateLimit} from '@/lib/rate-limit';
 import {GET as getStars} from '@/app/api/stars/route';
 import {GET as getAdminStars,DELETE as removeStarName} from '@/app/api/admin/stars/route';
+import {GET as getAdminReports} from '@/app/api/admin/reports/route';
 import {issueSession} from '@/lib/session';
 import {starTile} from '@/lib/stars';
 import {POST as postCompletion} from '@/app/api/completions/route';
@@ -59,11 +60,37 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
    const star=await registerVerifiedCompletion({slug,idempotencyKey:randomUUID(),abuseKey:'test-hash',adultEmailHash:adultEmailHash(),starName:'Removable Explorer'});
    if(!star.ok)throw Error('Fixture challenge unavailable.');
    expect((await getAdminStars(new NextRequest('https://roama.test/api/admin/stars'))).status).toBe(401);
+   expect((await getAdminReports(new NextRequest('https://roama.test/api/admin/reports?days=30'))).status).toBe(401);
    const admin=await prisma.adminUser.create({data:{email:`star-admin-${randomUUID()}@example.test`,passwordHash:'test-only-unused-password-hash'}});
    adminId=admin.id;
    const cookie=`roama_admin=${issueSession(admin.id,admin.email)}`;
    const listing=await getAdminStars(new NextRequest('https://roama.test/api/admin/stars',{headers:{cookie}}));
    expect(listing.status).toBe(200);
+   await prisma.analyticsEvent.create({data:{
+    type:'STAR_CARD_DOWNLOADED',
+    challengeId,
+    target:'landscape',
+    source:'creator_slug',
+    medium:'creator',
+    campaign:'roama_signal_quest_launch',
+    content:'shadow_wall_creature_a',
+    referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
+   }});
+   const report=await getAdminReports(new NextRequest('https://roama.test/api/admin/reports?days=7',{headers:{cookie}}));
+   expect(report.status).toBe(200);
+   const reportData=await report.json();
+   expect(reportData.attribution).toContainEqual(expect.objectContaining({
+    type:'STAR_CARD_DOWNLOADED',
+    target:'landscape',
+    source:'creator_slug',
+    medium:'creator',
+    campaign:'roama_signal_quest_launch',
+    content:'shadow_wall_creature_a',
+    referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
+    challenge:slug,
+   }));
+   expect(JSON.stringify(reportData)).not.toContain('adultEmail');
+   expect((await getAdminReports(new NextRequest('https://roama.test/api/admin/reports?days=365',{headers:{cookie}}))).status).toBe(400);
    expect((await listing.json()).stars.some((item:{starNumber:number})=>item.starNumber===star.starNumber)).toBe(true);
    const remove=(origin:string)=>removeStarName(new NextRequest('https://roama.test/api/admin/stars',{method:'DELETE',headers:{cookie,origin,'Content-Type':'application/json'},body:JSON.stringify({starNumber:star.starNumber})}));
    expect((await remove('https://other.test')).status).toBe(403);
@@ -124,7 +151,7 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
    const response=await requestVerification(new NextRequest('https://roama.test/api/verification/request',{
     method:'POST',
     headers:{origin:'https://roama.test','content-type':'application/json','x-real-ip':ip},
-    body:JSON.stringify({email,challengeSlug:slug,adultConfirmed:true,starName,publicNameConfirmed:true,website:''}),
+    body:JSON.stringify({email,challengeSlug:slug,adultConfirmed:true,starName,publicNameConfirmed:true,website:'',source:'creator_slug',medium:'creator',campaign:'roama_signal_quest_launch',content:'micro_zoomout_a',referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de'}),
    }));
    expect(response.status).toBe(202);
    expect(JSON.stringify(await response.json())).not.toContain(email);
@@ -145,13 +172,43 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
   }));
   try {
    const firstToken=await requestLink('Fictional Explorer',`192.0.2.${Math.floor(Math.random()*200)+1}`);
+   const attributedStart=await prisma.analyticsEvent.findFirst({
+    where:{type:'COMPLETION_STARTED',challengeId},
+    orderBy:{createdAt:'desc'},
+   });
+   expect(attributedStart).toMatchObject({
+    source:'creator_slug',
+    medium:'creator',
+    campaign:'roama_signal_quest_launch',
+    content:'micro_zoomout_a',
+    referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
+   });
    const first=await verify(firstToken,`198.51.100.${Math.floor(Math.random()*200)+1}`);
    expect(first.status).toBe(200);
    const star=await first.json();
-   expect(star).toMatchObject({starName:'Fictional Explorer',count:countBefore+1,recovered:false});
+   expect(star).toMatchObject({starName:'Fictional Explorer',count:countBefore+1,recovered:false,attribution:{
+    source:'creator_slug',
+    medium:'creator',
+    campaign:'roama_signal_quest_launch',
+    content:'micro_zoomout_a',
+    referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
+   }});
    const saved=await prisma.completion.findUniqueOrThrow({where:{adultEmailHash:adultEmailDigest(email)}});
    expect(saved).toMatchObject({starNumber:star.starNumber,starName:'Fictional Explorer',emailVerifiedAt:expect.any(Date)});
    expect(JSON.stringify(star)).not.toContain(email);
+   const attributedConversion=await prisma.analyticsEvent.findFirst({
+    where:{type:'COMPLETION_ACCEPTED',challengeId},
+    orderBy:{createdAt:'desc'},
+   });
+   expect(attributedConversion).toMatchObject({
+    source:'creator_slug',
+    medium:'creator',
+    campaign:'roama_signal_quest_launch',
+    content:'micro_zoomout_a',
+    referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
+   });
+   expect(JSON.stringify(attributedConversion)).not.toContain(email);
+   expect(JSON.stringify(attributedConversion)).not.toContain(firstToken);
 
    const replay=await verify(firstToken,`198.51.100.${Math.floor(Math.random()*200)+1}`);
    expect(replay.status).toBe(410);

@@ -42,6 +42,7 @@ export async function POST(req:NextRequest) {
       starName:result.starName,
       count:result.count,
       recovered:result.duplicate,
+      attribution:result.attribution,
     },{headers:{'Cache-Control':'no-store'}});
   } catch(error) {
     const code=typeof error==='object'&&error!==null&&'code' in error&&typeof error.code==='string'

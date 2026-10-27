@@ -2,6 +2,9 @@
 
 import {useState} from 'react';
 import Link from 'next/link';
+import {trackEvent} from '@/lib/client-analytics';
+import {appendAttribution,readAttribution,type Attribution} from '@/lib/attribution';
+import {shareFileOrLink} from '@/lib/share-card';
 
 const WIDTH=1200;
 const HEIGHT=630;
@@ -63,13 +66,13 @@ async function imageFile(starNumber:number,starName:string|null) {
   }
 }
 
-function track(event:'star_card_downloaded'|'star_card_shared') {
-  void fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event})})
-    .catch(error=>console.warn('Star-card analytics unavailable.',error));
+function track(event:'star_card_downloaded'|'star_card_shared'|'share',attribution:Attribution|undefined,target?:string) {
+  trackEvent(event,{target},attribution);
 }
 
-export default function StarCardActions({starNumber,starName,onStatus}:{starNumber:number;starName:string|null;onStatus:(message:string)=>void}) {
+export default function StarCardActions({starNumber,starName,onStatus,attribution}:{starNumber:number;starName:string|null;onStatus:(message:string)=>void;attribution?:Attribution}) {
   const [busy,setBusy]=useState(false);
+  const publicStarUrl=appendAttribution(`/stars?star=${starNumber}`,attribution||{});
 
   async function download() {
     setBusy(true);
@@ -81,7 +84,7 @@ export default function StarCardActions({starNumber,starName,onStatus}:{starNumb
       anchor.download=file.name;
       anchor.click();
       window.setTimeout(()=>URL.revokeObjectURL(url),1000);
-      track('star_card_downloaded');
+      track('star_card_downloaded',attribution,'landscape');
       onStatus('Your private-safe star card has been downloaded.');
     } catch(error) {
       console.error('Star-card download failed.',error instanceof Error?error.name:'UnknownError');
@@ -99,11 +102,15 @@ export default function StarCardActions({starNumber,starName,onStatus}:{starNumb
     setBusy(true);
     try {
       const file=await imageFile(starNumber,starName);
-      const payload={title:`My ROAMA Signal Quest star #${starNumber}`,text:'One world. One million places to shine.',url:`${window.location.origin}/stars?star=${starNumber}`};
-      track('star_card_shared');
-      if(navigator.canShare?.({files:[file]}))await navigator.share({...payload,files:[file]});
-      else await navigator.share(payload);
-      onStatus('Your star card is ready to share.');
+      const payload={title:`My ROAMA Signal Quest star #${starNumber}`,text:'One world. One million places to shine.',url:`${window.location.origin}${appendAttribution(`/stars?star=${starNumber}`,{...readAttribution(window.location.search),...attribution})}`};
+      const shared=await shareFileOrLink(file,payload,navigator.share.bind(navigator),navigator.canShare?.bind(navigator));
+      if(shared==='file'){
+        track('star_card_shared',attribution,'card_file');
+        onStatus('Your star card and public star link were shared.');
+      }else{
+        track('share',attribution,'star_link_share');
+        onStatus('Your public star link was shared. This browser could not attach the card image.');
+      }
     } catch(error) {
       if(error instanceof DOMException&&error.name==='AbortError')return;
       console.error('Star-card sharing failed.',error instanceof Error?error.name:'UnknownError');
@@ -114,9 +121,10 @@ export default function StarCardActions({starNumber,starName,onStatus}:{starNumb
   }
 
   async function copyLink() {
-    const link=`${window.location.origin}/stars?star=${starNumber}`;
+    const link=`${window.location.origin}${appendAttribution(`/stars?star=${starNumber}`,{...readAttribution(window.location.search),...attribution})}`;
     try {
       await navigator.clipboard.writeText(link);
+      track('share',attribution,'star_link_copy');
       onStatus('Public star link copied.');
     } catch(error) {
       console.warn('Star link could not be copied.',error instanceof Error?error.name:'UnknownError');
@@ -128,6 +136,6 @@ export default function StarCardActions({starNumber,starName,onStatus}:{starNumb
     <button className="share-button" disabled={busy} onClick={()=>void download()}>{busy?'Preparing…':'Download my star card ↓'}</button>
     <button className="share-button" disabled={busy} onClick={()=>void share()}>Share my star ↗</button>
     <button className="share-button" onClick={()=>void copyLink()}>Copy star link</button>
-    <Link className="star-public-link" href={`/stars?star=${starNumber}`}>Open public star card</Link>
+    <Link className="star-public-link" href={publicStarUrl}>Open public star card</Link>
   </div>;
 }

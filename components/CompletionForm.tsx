@@ -2,6 +2,7 @@
 
 import {useState,type FormEvent} from 'react';
 import Link from 'next/link';
+import {attributionFields,readAttribution} from '@/lib/attribution';
 
 export default function CompletionForm({challengeSlug,verificationEnabled}:{challengeSlug:string;verificationEnabled:boolean}) {
   const [starName,setStarName]=useState('');
@@ -27,6 +28,7 @@ export default function CompletionForm({challengeSlug,verificationEnabled}:{chal
           starName:form.get('starName'),
           publicNameConfirmed:form.get('publicNameConfirmed')==='on',
           website:form.get('website'),
+          ...attributionFields(readAttribution(window.location.search)),
         }),
       });
       const result=await response.json() as {message?:string;error?:string};

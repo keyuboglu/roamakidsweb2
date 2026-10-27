@@ -6,6 +6,7 @@ import {starNameSchema} from '@/lib/completion-input';
 import {prisma} from '@/lib/prisma';
 import {abuseKey,rateLimit} from '@/lib/rate-limit';
 import {isSameOrigin} from '@/lib/session';
+import {attributionFields,sanitizeAttribution} from '@/lib/attribution';
 
 const schema=z.object({
   email:z.string().trim().email().max(254),
@@ -14,6 +15,11 @@ const schema=z.object({
   starName:starNameSchema.optional(),
   publicNameConfirmed:z.boolean().optional(),
   website:z.string().max(0).optional(),
+  source:z.string().max(100).optional(),
+  medium:z.string().max(100).optional(),
+  campaign:z.string().max(100).optional(),
+  content:z.string().max(100).optional(),
+  referralCode:z.string().max(100).optional(),
 }).refine(value=>!value.starName||value.publicNameConfirmed===true,{
   message:'Confirm that the made-up name will be public.',
   path:['publicNameConfirmed'],
@@ -37,6 +43,7 @@ export async function POST(req:NextRequest) {
   if(parsed.data.website)return NextResponse.json(genericResponse,{status:202});
   const email=parsed.data.email.toLowerCase();
   const starName=parsed.data.starName||null;
+  const attribution=sanitizeAttribution(parsed.data);
 
   try {
     const challenge=await prisma.challenge.findFirst({
@@ -58,7 +65,7 @@ export async function POST(req:NextRequest) {
     const tokenHash=createHash('sha256').update(token).digest('hex');
     const expiresAt=new Date(Date.now()+EMAIL_VERIFICATION_TTL_MS);
     await prisma.emailVerificationToken.create({
-      data:{tokenHash,adultEmailHash:emailHash,challengeId:challenge.id,starName,expiresAt},
+      data:{tokenHash,adultEmailHash:emailHash,challengeId:challenge.id,starName,expiresAt,...attributionFields(attribution)},
     });
     try {
       const sent=await sendVerificationEmail(email,token);
@@ -73,7 +80,7 @@ export async function POST(req:NextRequest) {
       return NextResponse.json({error:'The verification email could not be sent. Please try again later.'},{status:503});
     }
     try {
-      await prisma.analyticsEvent.create({data:{type:'COMPLETION_STARTED',challengeId:challenge.id}});
+      await prisma.analyticsEvent.create({data:{type:'COMPLETION_STARTED',challengeId:challenge.id,...attributionFields(attribution)}});
     } catch(error) {
       console.error('Verification request analytics unavailable.',error instanceof Error?error.name:'UnknownError');
     }

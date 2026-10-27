@@ -83,6 +83,11 @@ model EmailVerificationToken {
   challengeId    String
   challenge      Challenge  @relation(fields: [challengeId], references: [id], onDelete: Restrict)
   starName       String?    @db.VarChar(40)
+  source         String?    @db.VarChar(100)
+  medium         String?    @db.VarChar(100)
+  campaign       String?    @db.VarChar(100)
+  content        String?    @db.VarChar(100)
+  referralCode   String?    @db.VarChar(36)
   createdAt      DateTime   @default(now())
   expiresAt      DateTime
   consumedAt     DateTime?
@@ -122,11 +127,14 @@ model AnalyticsEvent {
   source      String?            @db.VarChar(100)
   medium      String?            @db.VarChar(100)
   campaign    String?            @db.VarChar(100)
+  content     String?            @db.VarChar(100)
+  referralCode String?           @db.VarChar(36)
   target      String?            @db.VarChar(20)
   createdAt   DateTime           @default(now())
 
   @@index([type, createdAt])
   @@index([challengeId, type, createdAt])
+  @@index([createdAt, source, medium, campaign])
 }
 
 model RateLimitBucket {

@@ -5,15 +5,17 @@ import Link from 'next/link';
 import {OFFICIAL_IOS_STORE_URL} from '@/lib/brand';
 import {trackStoreClick} from '@/lib/client-analytics';
 import StarCardActions from '@/components/StarCardActions';
+import {appendAttribution,sanitizeAttribution,type Attribution} from '@/lib/attribution';
 
-type Star={starNumber:number;starName:string|null;count:number;recovered:boolean};
+type Star={starNumber:number;starName:string|null;count:number;recovered:boolean;attribution?:Attribution};
 
 function isStar(value:unknown):value is Star {
   if(typeof value!=='object'||value===null)return false;
-  return 'starNumber' in value&&typeof value.starNumber==='number'
+  const valid='starNumber' in value&&typeof value.starNumber==='number'
     &&'starName' in value&&(typeof value.starName==='string'||value.starName===null)
     &&'count' in value&&typeof value.count==='number'
     &&'recovered' in value&&typeof value.recovered==='boolean';
+  return valid&&(!('attribution' in value)||typeof value.attribution==='object');
 }
 
 export default function VerifyEmail() {
@@ -45,7 +47,7 @@ export default function VerifyEmail() {
         throw new Error(message);
       }
       if(!isStar(result))throw new Error('The verification service returned an unexpected response. Request a fresh link if needed.');
-      setStar(result);
+      setStar({...result,attribution:sanitizeAttribution(result.attribution)});
     } catch(caught) {
       setError(caught instanceof Error?caught.message:'Verification failed. Request a new link and try again.');
     } finally {
@@ -66,10 +68,10 @@ export default function VerifyEmail() {
       <p className="detail-lede">{star.recovered?'Your existing permanent star is ready.':'Your permanent star is ready.'} ROAMA Signal Quest · The Great Signal Quest</p>
       <p className="reveal-tagline">One world. One million places to shine.</p>
       <p className="reveal-count">{star.count.toLocaleString('en-US')} verified adult-email star claims</p>
-      <StarCardActions starNumber={star.starNumber} starName={star.starName} onStatus={setNotice}/>
+      <StarCardActions starNumber={star.starNumber} starName={star.starName} attribution={star.attribution} onStatus={setNotice}/>
       {notice&&<p className="verify-notice" role="status">{notice}</p>}
-      <p><Link className="text-link" href={`/stars?star=${star.starNumber}`}>Find your star in the sky →</Link></p>
-      <a className="store-button reveal-store" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios')}>
+      <p><Link className="text-link" href={appendAttribution(`/stars?star=${star.starNumber}`,star.attribution||{})}>Find your star in the sky →</Link></p>
+      <a className="store-button reveal-store" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios',undefined,star.attribution)}>
         Discover ROAMA Kids on the App Store ↗
       </a>
     </div>
