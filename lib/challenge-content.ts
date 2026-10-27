@@ -25,7 +25,7 @@ export const campaignChallenges=[
     title:'The Shadow Signal',
     shortDescription:'Can you make something ordinary look impossible?',
     description:'Turn an ordinary object into an extraordinary shadow.',
-    seoDescription:'Turn a safe household object into a surprising shadow shape in this screen-free family activity. Make a guess, reveal the object and explore light together.',
+    seoDescription:'A screen-free shadow experiment for kids ages 6–12 and families. Use a safe household object to create a surprising shape, guess what made it, and explore light together.',
     estimatedTime:'No set time; take it at your own pace.',
     materials:'One safe household object, a light source such as daylight or a room light, and a plain wall or surface.',
     ageGuidance:{
@@ -53,7 +53,7 @@ export const campaignChallenges=[
     title:'The Micro-World Safari',
     shortDescription:'What if you looked a little closer?',
     description:'Discover an extraordinary world hidden in something ordinary.',
-    seoDescription:'Explore surprising textures and tiny patterns on an everyday object in this screen-free family discovery activity. No special equipment or app is needed.',
+    seoDescription:'A screen-free nature discovery activity for kids ages 6–12. Explore a clean leaf or everyday object up close, make a guess, and reveal its tiny world without special equipment.',
     estimatedTime:'No set time; take it at your own pace.',
     materials:'A safe, clean everyday object or detail. A camera or paper for drawing is optional.',
     ageGuidance:{
@@ -81,7 +81,7 @@ export const campaignChallenges=[
     title:'The Gravity Defier',
     shortDescription:'Can you balance three objects in a way that looks impossible?',
     description:'Make ordinary objects do something unexpected.',
-    seoDescription:'Try a screen-free balancing challenge with safe, lightweight household objects. Build a surprising arrangement and see if it stays upright for three seconds.',
+    seoDescription:'A screen-free balancing activity for kids ages 6–12 and families. Arrange three safe, lightweight household objects and see if your surprising stack stands for three seconds.',
     estimatedTime:'No set time; take it at your own pace.',
     materials:'Three safe, lightweight household objects and a low, steady surface.',
     ageGuidance:{

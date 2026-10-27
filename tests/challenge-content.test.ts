@@ -25,6 +25,14 @@ describe('campaign challenges',()=>{
     expect(campaignChallenges.every(challenge=>challenge.estimatedTime&&challenge.materials&&challenge.imageAlt)).toBe(true);
   });
 
+  it('uses unique search descriptions for the intended age range and activity topics',()=>{
+    const descriptions=campaignChallenges.map(challenge=>challenge.seoDescription);
+    expect(new Set(descriptions).size).toBe(campaignChallenges.length);
+    expect(descriptions[0]).toMatch(/shadow experiment.*ages 6–12/i);
+    expect(descriptions[1]).toMatch(/nature discovery.*ages 6–12/i);
+    expect(descriptions[2]).toMatch(/balancing activity.*ages 6–12/i);
+  });
+
   it('uses a known challenge image over any stored fallback and preserves unknown challenge art',()=>{
     expect(challengeArtwork('gravity-defier','/custom.png')).toBe('/images/challenges/gravity-defier.png');
     expect(challengeArtwork('other-challenge','/custom.png')).toBe('/custom.png');

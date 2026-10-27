@@ -36,10 +36,16 @@ describe('canonical site origin',()=>{
       `${PRODUCTION_SITE_URL}/challenge/micro-world-safari`,
       `${PRODUCTION_SITE_URL}/challenge/gravity-defier`,
     ]);
-    expect(entries.filter(entry=>entry.lastModified).every(entry=>{
-      const value=entry.lastModified instanceof Date?entry.lastModified.toISOString():entry.lastModified;
-      return value==='2026-10-26T00:00:00.000Z';
-    })).toBe(true);
+    expect(entries.filter(entry=>entry.lastModified).map(entry=>({
+      url:entry.url,
+      lastModified:entry.lastModified instanceof Date?entry.lastModified.toISOString():entry.lastModified,
+    }))).toEqual([
+      {url:PRODUCTION_SITE_URL,lastModified:'2026-10-26T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/privacy`,lastModified:'2026-10-26T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/challenge/shadow-signal`,lastModified:'2026-10-27T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/challenge/micro-world-safari`,lastModified:'2026-10-27T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/challenge/gravity-defier`,lastModified:'2026-10-27T00:00:00.000Z'},
+    ]);
   });
 
   it('escapes script-closing content in structured data',()=>{
