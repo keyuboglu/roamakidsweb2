@@ -4,9 +4,13 @@ import {useCallback,useEffect,useState} from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import Brand from '@/components/Brand';
-import {OFFICIAL_IOS_STORE_URL,OFFICIAL_SITE_URL} from '@/lib/brand';
-import {trackStoreClick} from '@/lib/client-analytics';
-import {attributionFields,readAttribution} from '@/lib/attribution';
+import {OFFICIAL_SITE_URL} from '@/lib/brand';
+import {trackEvent} from '@/lib/client-analytics';
+import {appendAttribution,currentAttribution} from '@/lib/attribution';
+import AppDownloadCTA from '@/components/AppDownloadCTA';
+import {useLanguage} from '@/components/FunnelPreferences';
+import {FAMILY_CHALLENGE_MESSAGE,localizedPath} from '@/lib/funnel';
+import {turkishChallenges} from '@/lib/challenge-translations';
 
 type Challenge={slug:string;title:string;shortDescription:string;instructions?:string;duration?:string|null;safety?:string;imageUrl?:string|null};
 export type Campaign={configured:boolean;count:number|null;goal:number;title?:string;headline?:string;description?:string;milestones?:({threshold:number;label:string}|number)[];challenges:Challenge[];iosStoreUrl?:string|null;androidStoreUrl?:string|null;error?:string};
@@ -42,8 +46,8 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
   const count=data.count;
   const progress=count===null?0:Math.min(count/data.goal*100,100);
   const litStars=count===null?0:Math.round(progress/100*28);
-  const ios=OFFICIAL_IOS_STORE_URL;
-  const android=data.androidStoreUrl;
+  const language=useLanguage();
+  const tr=language==='tr';
   const headline=data.headline||'A MILLION STARS. ONE GLOBAL QUEST.';
   const headlineSentences=headline.match(/^(.+?[.!?])\s+(.+)$/);
   const challengePresentation:Record<string,{title:string;defaultTitle:string;description:string;defaultDescription:string;alt:string;accent:string}>={
@@ -53,8 +57,7 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
   };
 
   useEffect(()=>{
-    const attribution=readAttribution(location.search);
-    void fetch('/api/events',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({event:'page_view',...attributionFields(attribution)})}).catch(error=>console.warn('Page analytics unavailable.',error));
+    trackEvent('page_view');
   },[]);
 
   useEffect(()=>{
@@ -75,23 +78,12 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
     const link=event.target.closest<HTMLAnchorElement>('a[href^="/challenge/"]');
     const slug=link?.getAttribute('href')?.split('?')[0].split('/').pop();
     if(!link||!slug)return;
-    const attribution=readAttribution(window.location.search);
-    if(!Object.values(attribution).some(Boolean))return;
-    event.preventDefault();
-    const target=new URL(`/challenge/${slug}`,window.location.origin);
-    const params=new URLSearchParams();
-    if(attribution.source)params.set('utm_source',attribution.source);
-    if(attribution.medium)params.set('utm_medium',attribution.medium);
-    if(attribution.campaign)params.set('utm_campaign',attribution.campaign);
-    if(attribution.content)params.set('utm_content',attribution.content);
-    if(attribution.referralCode)params.set('ref',attribution.referralCode);
-    target.search=params.toString();
-    window.location.assign(target.href);
+    link.href=appendAttribution(localizedPath(`/challenge/${slug}`,language),currentAttribution());
   }
 
   return <main>
     <header className="topbar">
-      <Brand/>
+      <Brand href={localizedPath('/',language)}/>
       <nav aria-label="Main navigation">
         <a href="#top">The Quest</a>
         <a href="#challenges">Challenges</a>
@@ -99,15 +91,16 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
         <a href="#parents">For Parents</a>
       </nav>
       <div className="topbar-actions">
-        <a className="nav-cta nav-cta-store" href={ios} target="_blank" rel="noreferrer" aria-label="Download ROAMA Kids from the App Store" onClick={()=>trackStoreClick('ios')}><span className="nav-store-full">Download App Store</span><span className="nav-store-short">App Store</span> ↗</a>
-        <a className="nav-cta nav-cta-join" href="#challenges">Join the Quest <span>↗</span></a>
+        <AppDownloadCTA compact/>
+        <a className="nav-cta nav-cta-join" href="#challenges">{tr?'Görev seç':'Join the Quest'} <span>↗</span></a>
       </div>
     </header>
     <section className="hero" id="top">
       <div className="hero-copy">
         <p className="eyebrow"><span className="eyebrow-dot"/> ROAMA KIDS PRESENTS · {(data.title||'THE GREAT SIGNAL QUEST').toUpperCase()}</p>
         <h1>{headlineSentences?<>{headlineSentences[1]}<br/><em>{headlineSentences[2]}</em></>:headline}</h1>
-        <p className="hero-lede">{data.description||'Explore the real world, complete a challenge, and earn your star in the ROAMA Kids universe.'}</p>
+        <p className="hero-lede">{tr?'6–12 yaş çocuklar için üç ücretsiz, ekransız aile görevi. Uygulama, fotoğraf veya kayıt gerekmez.':FAMILY_CHALLENGE_MESSAGE}</p>
+        {data.description&&data.description!==FAMILY_CHALLENGE_MESSAGE&&<p className="hero-context">{data.description}</p>}
         <div className="hero-actions"><a className="button button-gold" href="#challenges">CHOOSE YOUR ADVENTURE <span>↘</span></a><Link className="text-link" href="/stars">Explore the star map <span>→</span></Link></div>
         <p className="hero-note"><span className="tiny-star">✦</span> A million children is our mission—not a current count.</p>
       </div>
@@ -123,20 +116,21 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
         <span className="scene-caption">REAL-WORLD CURIOSITY · ROAMA KIDS ADVENTURE</span>
       </div>
     </section>
-    <section className="challenge-section" id="challenges" onClick={preserveChallengeAttribution} aria-labelledby="challenge-heading">
-      <div className="section-heading"><div><p className="eyebrow">THREE MISSIONS · ONE BIG WORLD</p><h2 id="challenge-heading">Choose your adventure.</h2></div><p>Pick one mission. Explore together with your grown-up.</p></div>
+    <section className="challenge-section" id="challenges" onClickCapture={preserveChallengeAttribution} aria-labelledby="challenge-heading">
+      <div className="section-heading"><div><p className="eyebrow">{tr?'ÜÇ GÖREV · KOCAMAN BİR DÜNYA':'THREE MISSIONS · ONE BIG WORLD'}</p><h2 id="challenge-heading">{tr?'Maceranızı seçin.':'Choose your adventure.'}</h2></div><p>{tr?'6–12 yaş için. Bir görev seçin; bir yetişkinle birlikte keşfedin.':'For kids ages 6–12. Pick one mission. Explore together with your grown-up.'}</p></div>
       {data.challenges.length?<><div className="challenge-grid">{data.challenges.slice(0,3).map((challenge,index)=>{
         const presentation=challengePresentation[challenge.slug];
         if(!presentation)return null;
-        const title=challenge.title===presentation.defaultTitle?presentation.title:challenge.title.replace(/^The\s+/i,'').toUpperCase();
-        const description=challenge.shortDescription===presentation.defaultDescription?presentation.description:challenge.shortDescription;
+        const translation=tr?turkishChallenges[challenge.slug]:undefined;
+        const title=translation?.title||(challenge.title===presentation.defaultTitle?presentation.title:challenge.title.replace(/^The\s+/i,'').toUpperCase());
+        const description=translation?.shortDescription||(challenge.shortDescription===presentation.defaultDescription?presentation.description:challenge.shortDescription);
         return <article className={`challenge-card challenge-card-${presentation.accent}`} key={challenge.slug}>
-          <Link className="challenge-card-link" href={`/challenge/${challenge.slug}`} aria-label={`${title}: ${description} Start challenge`}>
-            <span className="challenge-card-image-wrap"><Image className="challenge-card-image" src={challenge.imageUrl||'/og-great-signal.svg'} alt={presentation.alt} width={661} height={793} unoptimized/></span>
-            <span className="challenge-info"><span className="challenge-index">MISSION 0{index+1}</span><span className="challenge-title">{title}</span><span className="challenge-description">{description}</span><span className="card-link">START CHALLENGE <span aria-hidden="true">↗</span></span></span>
-          </Link>
+          <a className="challenge-card-link" href={localizedPath(`/challenge/${challenge.slug}`,language)} aria-label={`${title}: ${description} ${tr?'Göreve başla':'Start challenge'}`}>
+            <span className="challenge-card-image-wrap"><Image className="challenge-card-image" src={challenge.imageUrl||'/og-great-signal.svg'} alt={translation?.imageAlt||presentation.alt} width={661} height={793} unoptimized/></span>
+            <span className="challenge-info"><span className="challenge-index">{tr?'GÖREV':'MISSION'} 0{index+1}</span><span className="challenge-title">{title}</span><span className="challenge-description">{description}</span><span className="card-link">{tr?'GÖREVE BAŞLA':'START CHALLENGE'} <span aria-hidden="true">↗</span></span></span>
+          </a>
         </article>;
-      })}</div>{status==='error'&&<p className="campaign-data-notice" role="status">The live star count is temporarily unavailable. Challenge instructions remain available.</p>}</>:<div className="empty-challenges" id="challenge-status" role="status"><span className="empty-spark">✦</span><div><h3>The challenges are temporarily unavailable.</h3><p>Challenge instructions will be shown here when campaign data is available. No participation is recorded by this page.</p><Link className="card-link" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer">Discover ROAMA Kids on the App Store ↗</Link></div><span className="empty-tag">CHECK BACK SOON</span></div>}
+      })}</div>{status==='error'&&<p className="campaign-data-notice" role="status">The live star count is temporarily unavailable. Challenge instructions remain available.</p>}</>:<div className="empty-challenges" id="challenge-status" role="status"><span className="empty-spark">✦</span><div><h3>The challenges are temporarily unavailable.</h3><p>Challenge instructions will be shown here when campaign data is available. No participation is recorded by this page.</p><a className="card-link" href="#get-app">Discover ROAMA Kids ↗</a></div><span className="empty-tag">CHECK BACK SOON</span></div>}
     </section>
     <section className="how-section" id="how" aria-labelledby="how-heading">
       <div className="how-title"><p className="eyebrow">A LITTLE ADVENTURE GOES A LONG WAY</p><h2 id="how-heading">HOW IT<br/><em>WORKS</em></h2><p>Simple steps. Big discoveries.</p></div>
@@ -161,7 +155,14 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
     </section>
     <section className="parent-section" id="parents" aria-labelledby="parents-heading">
       <div className="parent-visual"><Image src="/roama-logo.webp" alt="Official ROAMA Kids fox logo" width={192} height={192} unoptimized/><span className="parent-visual-star" aria-hidden="true">✦</span><span className="parent-visual-caption">CURIOUS TOGETHER</span></div>
-      <div className="parent-copy"><p className="eyebrow">A NOTE FOR GROWN-UPS</p><h2 id="parents-heading">ADVENTURES TO<br/><em>EXPLORE TOGETHER</em></h2><p>ROAMA Signal Quest encourages children to explore the world around them through simple, real-world activities.</p><ul><li>Everyday materials and accessible activities.</li><li>Adult support and supervision during challenges.</li><li>Curiosity, creativity, and discovery.</li><li>A thoughtful balance between app adventures and real-world exploration.</li></ul><div className="parent-actions"><a className="button button-gold" href={ios} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios')}>ROAMA KIDS ON THE APP STORE ↗</a>{android&&<a className="text-link" href={android} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('android')}>Google Play <span>↗</span></a>}<Link className="text-link" href="/privacy">Privacy information <span>→</span></Link></div><p className="bridge-foot">No app download, photo, video or public post is needed to join a challenge.</p></div>
+      <div className="parent-copy"><p className="eyebrow">A NOTE FOR GROWN-UPS</p><h2 id="parents-heading">ADVENTURES TO<br/><em>EXPLORE TOGETHER</em></h2><p>ROAMA Signal Quest encourages children ages 6–12 to explore the world around them through simple, real-world activities.</p><ul><li>Everyday materials and accessible activities.</li><li>Adult support and supervision during challenges.</li><li>Curiosity, creativity, and discovery.</li><li>A thoughtful balance between app adventures and real-world exploration.</li></ul><div className="parent-actions"><a className="button button-gold" href="#get-app">{tr?'ROAMA Kids uygulamasını keşfet':'DISCOVER THE ROAMA KIDS APP'} ↗</a><Link className="text-link" href="/privacy">Privacy information <span>→</span></Link></div><p className="bridge-foot">No app download, photo, video or public post is needed to join a challenge.</p></div>
+    </section>
+    <section className="home-app-section" id="get-app" aria-labelledby="get-app-heading">
+      <p className="eyebrow">ROAMA KIDS · {tr?'6–12 yaş':'ages 6–12'}</p>
+      <h2 id="get-app-heading">{tr?'Maceraya uygulamada devam edin.':'Continue the adventure in the app.'}</h2>
+      <p>{tr?'Ücretsiz görevler için uygulama veya kayıt gerekmez. Daha fazlasını keşfetmek isterseniz cihazınıza uygun seçeneği kullanın.':'The free challenges need no app or sign-up. If you want to explore more, choose the option for your device.'}</p>
+      <AppDownloadCTA/>
+      <p className="app-trust">{tr?'%100 Çocuk Dostu • Reklamsız • Herkese Açık Sohbet Yok • 6–12 yaş':'100% Kid-Safe • No Ads • No Public Chat • Ages 6–12'}</p>
     </section>
     <section className="global-mission" aria-labelledby="global-mission-heading">
       <div className="mission-constellation" aria-hidden="true"><svg viewBox="0 0 360 260"><circle cx="180" cy="130" r="95"/><ellipse cx="180" cy="130" rx="42" ry="95"/><path d="M86 130h188M105 83q75 43 150 0M105 177q75-43 150 0M73 198l52-58 52 24 61-87 50 42"/></svg><span className="mission-star mission-star-a">✦</span><span className="mission-star mission-star-b">✦</span><span className="mission-star mission-star-c">✦</span></div>
@@ -171,6 +172,6 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
       const milestone=typeof raw==='number'?{threshold:raw,label:index===4?'THE GREAT SIGNAL':'STARS'}:raw;
       return <div className={`milestone ${count!==null&&count>=milestone.threshold?'reached':''}`} key={milestone.threshold}><span className="milestone-star">✦</span><span className="milestone-number">{milestone.threshold.toLocaleString('en-US')}</span><span className="milestone-label">{milestone.label}</span><span className="milestone-status">{count!==null&&count>=milestone.threshold?'REACHED':'AHEAD'}</span></div>;
     })}</div></section>
-    <footer><Brand/><span>ROAMA SIGNAL QUEST · A MILLION STARS. ONE GLOBAL QUEST.</span><div><Link href="/stars">Explore the star map</Link><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">roama.tech ↗</a><Link href="/privacy">Privacy information</Link></div></footer>
+    <footer><Brand href={localizedPath('/',language)}/><span>ROAMA SIGNAL QUEST · A MILLION STARS. ONE GLOBAL QUEST.</span><div><Link href={localizedPath('/stars',language)}>Explore the star map</Link><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">roama.tech ↗</a><Link href="/privacy">Privacy information</Link></div></footer>
   </main>;
 }

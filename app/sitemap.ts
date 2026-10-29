@@ -3,8 +3,8 @@ import {campaignChallenges} from '@/lib/challenge-content';
 import {getCanonicalOrigin} from '@/lib/site-url';
 export const dynamic='force-dynamic';
 
-const siteContentLastModified=new Date('2026-10-26T00:00:00.000Z');
-const challengeContentLastModified=new Date('2026-10-27T00:00:00.000Z');
+const siteContentLastModified=new Date('2026-10-29T00:00:00.000Z');
+const challengeContentLastModified=new Date('2026-10-29T00:00:00.000Z');
 
 export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
  const base=getCanonicalOrigin();

@@ -51,6 +51,40 @@ export function readAttribution(search:string):Attribution {
   });
 }
 
+const storageKey='roama-campaign-attribution-v1';
+let sessionAttribution:Attribution={};
+
+export function captureAttribution(search:string,storage?:Pick<Storage,'getItem'|'setItem'>):Attribution {
+  const incoming=readAttribution(search);
+  try {
+    const saved=storage?.getItem(storageKey);
+    if(saved)sessionAttribution=sanitizeAttribution(JSON.parse(saved));
+  } catch {
+    console.warn('Campaign session attribution could not be read.');
+  }
+  // A new tagged arrival replaces the previous campaign; untagged navigation retains it.
+  if(Object.keys(incoming).length){
+    sessionAttribution=incoming;
+    try {
+      storage?.setItem(storageKey,JSON.stringify(incoming));
+    } catch {
+      console.warn('Campaign session attribution could not be saved.');
+    }
+  }
+  return {...sessionAttribution};
+}
+
+export function currentAttribution():Attribution {
+  if(typeof window==='undefined')return {};
+  let storage:Storage|undefined;
+  try {
+    storage=window.sessionStorage;
+  } catch {
+    console.warn('Campaign session storage is unavailable; using in-memory attribution.');
+  }
+  return captureAttribution(window.location.search,storage);
+}
+
 export function secureReferralCode(cryptoApi:SecureCryptoApi|undefined=globalThis.crypto) {
   if(!cryptoApi)throw new Error('Secure invitation links are unavailable in this browser.');
   if(typeof cryptoApi.randomUUID==='function')return cryptoApi.randomUUID();

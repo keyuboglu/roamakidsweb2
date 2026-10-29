@@ -383,3 +383,37 @@ footer>div{align-items:center;font-size:11px;color:#d5dded}
   .scene-star,.journey-star,.journey-constellation i,.parent-visual-star,.mission-star{animation:none!important}
   .star-journey.is-visible .journey-stage{animation:none}
 }
+
+.hero-context{color:#a6afbd;font-size:13px;line-height:1.7;max-width:435px;margin:-12px 0 24px}
+.home-app-section{padding:80px max(24px,9%);background:#101d34;scroll-margin-top:24px}
+.home-app-section h2{font-size:clamp(32px,4vw,48px);max-width:760px}
+.home-app-section>p:not(.eyebrow){max-width:760px;color:#c2c9d3;line-height:1.8}
+.app-download-options{display:grid;grid-template-columns:1fr;gap:26px;margin:26px 0;align-items:start}
+.app-download-desktop{grid-template-columns:1fr 1fr}
+.app-download-options>*{min-width:0}
+.app-store-button{line-height:1.6;text-align:center;gap:10px;width:100%;font-size:13px}
+.android-waitlist h3{font-size:20px;line-height:1.4;margin-bottom:12px}
+.android-waitlist form{position:relative;display:grid;gap:12px}
+.android-waitlist label:not(.completion-check):not(.completion-honeypot){font-size:12px;color:#d5dbe4}
+.waitlist-input-row{display:flex;gap:8px;align-items:stretch}
+.waitlist-input-row input{min-width:0;flex:1;width:100%;min-height:50px;border:1px solid #71819a;background:#0b1426;color:var(--cream);padding:12px;font:inherit;border-radius:4px}
+.waitlist-input-row .button{flex-shrink:0;gap:6px;border-radius:4px}
+.waitlist-input-row input:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
+.waitlist-launch-date{font-size:12px;line-height:1.6;color:#b9c5d6}
+.detail-page section.app-bridge{max-width:none;padding:28px 22px;margin:24px 0;border:1px solid rgba(231,195,116,.4);border-radius:16px;background:#13243d}
+.detail-page section.app-bridge h2{font-size:clamp(26px,4vw,36px);line-height:1.25}
+.detail-page section.app-bridge .app-download-options{margin:24px 0}
+.detail-page section .app-trust,.home-app-section .app-trust{font-size:12px;color:var(--gold);line-height:1.8}
+.detail-page section .app-bridge-note,.detail-page section .completion-privacy{font-size:11px;line-height:1.7;color:#a6b4c6}
+.detail-page section .completion-error{color:#ffb6af}
+.detail-complete>.button{margin-top:20px}
+.detail-complete>.button:disabled{opacity:.7;cursor:default;transform:none}
+@media(max-width:700px){
+  .home-app-section{padding:56px 22px}
+  .app-download-desktop{grid-template-columns:1fr}
+  .detail-page section.app-bridge{padding:24px 16px}
+  .topbar-actions .nav-cta{white-space:normal;text-align:center;line-height:1.4}
+}
+@media(max-width:360px){
+  .waitlist-input-row{flex-direction:column}
+}

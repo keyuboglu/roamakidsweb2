@@ -40,11 +40,11 @@ describe('canonical site origin',()=>{
       url:entry.url,
       lastModified:entry.lastModified instanceof Date?entry.lastModified.toISOString():entry.lastModified,
     }))).toEqual([
-      {url:PRODUCTION_SITE_URL,lastModified:'2026-10-26T00:00:00.000Z'},
-      {url:`${PRODUCTION_SITE_URL}/privacy`,lastModified:'2026-10-26T00:00:00.000Z'},
-      {url:`${PRODUCTION_SITE_URL}/challenge/shadow-signal`,lastModified:'2026-10-27T00:00:00.000Z'},
-      {url:`${PRODUCTION_SITE_URL}/challenge/micro-world-safari`,lastModified:'2026-10-27T00:00:00.000Z'},
-      {url:`${PRODUCTION_SITE_URL}/challenge/gravity-defier`,lastModified:'2026-10-27T00:00:00.000Z'},
+      {url:PRODUCTION_SITE_URL,lastModified:'2026-10-29T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/privacy`,lastModified:'2026-10-29T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/challenge/shadow-signal`,lastModified:'2026-10-29T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/challenge/micro-world-safari`,lastModified:'2026-10-29T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/challenge/gravity-defier`,lastModified:'2026-10-29T00:00:00.000Z'},
     ]);
   });
 

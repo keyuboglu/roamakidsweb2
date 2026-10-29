@@ -3,7 +3,7 @@
 import {useState} from 'react';
 import Link from 'next/link';
 import {trackEvent} from '@/lib/client-analytics';
-import {appendAttribution,readAttribution,type Attribution} from '@/lib/attribution';
+import {appendAttribution,currentAttribution,type Attribution} from '@/lib/attribution';
 import {shareFileOrLink} from '@/lib/share-card';
 
 const WIDTH=1200;
@@ -102,7 +102,7 @@ export default function StarCardActions({starNumber,starName,onStatus,attributio
     setBusy(true);
     try {
       const file=await imageFile(starNumber,starName);
-      const payload={title:`My ROAMA Signal Quest star #${starNumber}`,text:'One world. One million places to shine.',url:`${window.location.origin}${appendAttribution(`/stars?star=${starNumber}`,{...readAttribution(window.location.search),...attribution})}`};
+      const payload={title:`My ROAMA Signal Quest star #${starNumber}`,text:'One world. One million places to shine.',url:`${window.location.origin}${appendAttribution(`/stars?star=${starNumber}`,{...currentAttribution(),...attribution})}`};
       const shared=await shareFileOrLink(file,payload,navigator.share.bind(navigator),navigator.canShare?.bind(navigator));
       if(shared==='file'){
         track('star_card_shared',attribution,'card_file');
@@ -121,7 +121,7 @@ export default function StarCardActions({starNumber,starName,onStatus,attributio
   }
 
   async function copyLink() {
-    const link=`${window.location.origin}${appendAttribution(`/stars?star=${starNumber}`,{...readAttribution(window.location.search),...attribution})}`;
+    const link=`${window.location.origin}${appendAttribution(`/stars?star=${starNumber}`,{...currentAttribution(),...attribution})}`;
     try {
       await navigator.clipboard.writeText(link);
       track('share',attribution,'star_link_copy');

@@ -1,7 +1,9 @@
 'use client';
 
 import {useState} from 'react';
-import {attributionFields,readAttribution,trackedChallengeUrl,type Attribution} from '@/lib/attribution';
+import {attributionFields,currentAttribution,trackedChallengeUrl,type Attribution} from '@/lib/attribution';
+import {useLanguage} from '@/components/FunnelPreferences';
+import {localizedPath} from '@/lib/funnel';
 import {containImage,RIDDLE_CARD_FORMATS,type RiddleCardFormat} from '@/lib/riddle-cards';
 import {shareFileOrLink} from '@/lib/share-card';
 
@@ -172,13 +174,14 @@ function downloadBlob(blob:Blob,filename:string) {
 }
 
 export default function RiddleCardActions({slug,imageUrl,copy}:Props) {
+  const language=useLanguage();
   const [busy,setBusy]=useState(false);
   const [notice,setNotice]=useState('');
   const [trackedUrl,setTrackedUrl]=useState('');
 
   function invitationUrl() {
     if(trackedUrl)return trackedUrl;
-    const url=trackedChallengeUrl(`/challenge/${slug}`,readAttribution(window.location.search),slug);
+    const url=trackedChallengeUrl(localizedPath(`/challenge/${slug}`,language),currentAttribution(),slug);
     setTrackedUrl(url);
     return url;
   }
@@ -189,7 +192,7 @@ export default function RiddleCardActions({slug,imageUrl,copy}:Props) {
     try{
       const blob=await createCard(imageUrl,format,copy,slug);
       downloadBlob(blob,`roama-${slug}-riddle-card-${RIDDLE_CARD_FORMATS[format].width}x${RIDDLE_CARD_FORMATS[format].height}.png`);
-      track('star_card_downloaded',slug,format,readAttribution(window.location.search));
+      track('star_card_downloaded',slug,format,currentAttribution());
       setNotice(`Your ${RIDDLE_CARD_FORMATS[format].label} is ready to download.`);
     }catch(error){
       setNotice(error instanceof Error?error.message:'The riddle card could not be downloaded. Please try again.');
@@ -201,7 +204,7 @@ export default function RiddleCardActions({slug,imageUrl,copy}:Props) {
   async function share() {
     setBusy(true);
     setNotice('');
-    const attribution=readAttribution(window.location.search);
+    const attribution=currentAttribution();
     try{
       const url=invitationUrl();
       const blob=await createCard(imageUrl,'landscape',copy,slug);
@@ -236,7 +239,7 @@ export default function RiddleCardActions({slug,imageUrl,copy}:Props) {
     try{
       const url=invitationUrl();
       await navigator.clipboard.writeText(`${window.location.origin}${url}`);
-      track('share',slug,'challenge_link_copy',readAttribution(window.location.search));
+      track('share',slug,'challenge_link_copy',currentAttribution());
       setNotice('Tracked challenge link copied.');
     }catch(error){
       setNotice(error instanceof Error?error.message:'The link could not be copied in this browser.');

@@ -89,7 +89,7 @@ export async function redeemEmailVerificationToken(tokenHash:string,abuseKey:str
   const now=new Date();
   try {
     return await prisma.$transaction(async tx=>{
-      const token=await tx.emailVerificationToken.findUnique({where:{tokenHash}});
+      const token=await tx.emailVerificationToken.findUnique({where:{tokenHash},include:{challenge:{select:{slug:true}}}});
       if(!token)return {ok:false as const,reason:'invalid' as const};
       if(token.consumedAt)return {ok:false as const,reason:'used' as const};
       if(token.expiresAt<=now)return {ok:false as const,reason:'expired' as const};
@@ -116,9 +116,10 @@ export async function redeemEmailVerificationToken(tokenHash:string,abuseKey:str
           duplicate:true,
           ...prior,
           attribution:tokenAttribution(token),
+          challengeSlug:token.challenge.slug,
         };
       }
-      return createStar(tx,{
+      const created=await createStar(tx,{
         challengeId:token.challengeId,
         idempotencyKey:randomUUID(),
         abuseKey,
@@ -126,14 +127,15 @@ export async function redeemEmailVerificationToken(tokenHash:string,abuseKey:str
         starName:token.starName,
         attribution:tokenAttribution(token),
       });
+      return {...created,challengeSlug:token.challenge.slug};
     },{maxWait:30000,timeout:30000});
   } catch(error) {
     if(error instanceof ConstellationFullError)return {ok:false as const,reason:'full' as const};
     if(isUniqueConstraint(error)){
       await prisma.emailVerificationToken.updateMany({where:{tokenHash,consumedAt:null},data:{consumedAt:new Date()}});
-      const token=await prisma.emailVerificationToken.findUnique({where:{tokenHash},select:{adultEmailHash:true,source:true,medium:true,campaign:true,content:true,referralCode:true}});
+      const token=await prisma.emailVerificationToken.findUnique({where:{tokenHash},select:{adultEmailHash:true,source:true,medium:true,campaign:true,content:true,referralCode:true,challenge:{select:{slug:true}}}});
       const prior=await existingStar(token?.adultEmailHash||'',token?tokenAttribution(token):{});
-      if(prior)return prior;
+      if(prior)return {...prior,challengeSlug:token?.challenge.slug};
     }
     throw error;
   }

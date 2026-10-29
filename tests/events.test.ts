@@ -48,6 +48,20 @@ describe('campaign event endpoint',()=>{
     expect(mocks.create).not.toHaveBeenCalled();
   });
 
+  it('records explicit funnel starts, finishes and compatible App Store clicks, but not client-forged waitlist signups',async()=>{
+    for(const [event,type] of [
+      ['challenge_start','CHALLENGE_START'],
+      ['challenge_complete','CHALLENGE_COMPLETE'],
+      ['app_store_click','STORE_CLICK'],
+    ]){
+      expect((await POST(request({event,slug:'shadow-signal',source:'tiktok',medium:'social',campaign:'launch',content:'shadow_a'}))).status).toBe(200);
+      expect(mocks.create).toHaveBeenLastCalledWith({data:{
+        type,challengeId:'challenge-id',target:undefined,source:'tiktok',medium:'social',campaign:'launch',content:'shadow_a',
+      }});
+    }
+    expect((await POST(request({event:'android_waitlist_signup'}))).status).toBe(400);
+  });
+
   it('applies the existing database-backed analytics limit',async()=>{
     mocks.rateLimit.mockResolvedValue(false);
     expect((await POST(request({event:'page_view'}))).status).toBe(200);

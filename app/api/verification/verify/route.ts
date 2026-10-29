@@ -43,6 +43,7 @@ export async function POST(req:NextRequest) {
       count:result.count,
       recovered:result.duplicate,
       attribution:result.attribution,
+      challengeSlug:result.challengeSlug,
     },{headers:{'Cache-Control':'no-store'}});
   } catch(error) {
     const code=typeof error==='object'&&error!==null&&'code' in error&&typeof error.code==='string'

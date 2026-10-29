@@ -33,6 +33,9 @@ enum AnalyticsEventType {
   STORE_CLICK
   STAR_CARD_DOWNLOADED
   STAR_CARD_SHARED
+  CHALLENGE_START
+  CHALLENGE_COMPLETE
+  ANDROID_WAITLIST_SIGNUP
 }
 
 model Challenge {
@@ -143,4 +146,23 @@ model RateLimitBucket {
   count       Int      @default(0)
 
   @@index([windowStart])
+}
+
+model AndroidWaitlist {
+  id                 String   @id @default(cuid())
+  emailHash          String   @unique @db.Char(64)
+  encryptedEmail     String   @db.Text
+  source             String   @default("android_waitlist") @db.VarChar(100)
+  completedChallenge String?  @db.VarChar(100)
+  language           String   @db.VarChar(2)
+  consentVersion     String   @default("android-launch-v1") @db.VarChar(40)
+  utmSource          String?  @db.VarChar(100)
+  medium             String?  @db.VarChar(100)
+  campaign           String?  @db.VarChar(100)
+  content            String?  @db.VarChar(100)
+  referralCode       String?  @db.VarChar(36)
+  createdAt          DateTime @default(now())
+  expiresAt          DateTime
+
+  @@index([expiresAt])
 }

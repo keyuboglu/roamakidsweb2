@@ -1,8 +1,31 @@
-import {describe,expect,it} from 'vitest';
-import {appendAttribution,readAttribution,sanitizeAttribution,secureReferralCode,trackedChallengeUrl} from '@/lib/attribution';
+import {describe,expect,it,vi} from 'vitest';
+import {appendAttribution,captureAttribution,readAttribution,sanitizeAttribution,secureReferralCode,trackedChallengeUrl} from '@/lib/attribution';
 import {containImage,RIDDLE_CARD_COPY,RIDDLE_CARD_FORMATS} from '@/lib/riddle-cards';
 
 describe('campaign attribution',()=>{
+  it('keeps only sanitized campaign labels across untagged navigation and reloads in a tab session',()=>{
+    const values=new Map<string,string>();
+    const storage={getItem:(key:string)=>values.get(key)||null,setItem:(key:string,value:string)=>{values.set(key,value);}};
+    const expected={source:'tiktok',medium:'social',campaign:'launch',content:'shadow_a'};
+    expect(captureAttribution('?utm_source=tiktok&utm_medium=social&utm_campaign=launch&utm_content=shadow_a&email=private@example.test&token=secret',storage)).toEqual(expected);
+    expect(captureAttribution('',storage)).toEqual(expected);
+    expect([...values.values()].join('')).not.toContain('email');
+    expect([...values.values()].join('')).not.toContain('secret');
+    expect(captureAttribution('?utm_source=instagram',storage)).toEqual({source:'instagram'});
+    expect(captureAttribution('',storage)).toEqual({source:'instagram'});
+  });
+
+  it('falls back to memory with a warning when browser storage is blocked',()=>{
+    const warning=vi.spyOn(console,'warn').mockImplementation(()=>{});
+    try {
+      const storage={getItem:()=>{throw new Error('blocked');},setItem:()=>{throw new Error('blocked');}};
+      expect(captureAttribution('?utm_source=creator',storage)).toEqual({source:'creator'});
+      expect(captureAttribution('',storage)).toEqual({source:'creator'});
+      expect(warning).toHaveBeenCalled();
+    } finally {
+      warning.mockRestore();
+    }
+  });
   it('sanitizes campaign labels and accepts only anonymous UUID referral codes',()=>{
     expect(sanitizeAttribution({
       source:' tiktok ',

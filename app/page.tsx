@@ -7,9 +7,10 @@ import {campaignChallenges,mergeCampaignChallenges} from '@/lib/challenge-conten
 import {OFFICIAL_IOS_STORE_URL} from '@/lib/brand';
 import {getCanonicalOrigin} from '@/lib/site-url';
 import {serializeJsonLd} from '@/lib/json-ld';
+import {FAMILY_CHALLENGE_MESSAGE} from '@/lib/funnel';
 export const dynamic='force-dynamic';
 const homeTitle='ROAMA Signal Quest | Creative Challenges for Kids & Families';
-const homeDescription='Try three free, screen-free family challenges for kids ages 6–12: play with shadows, explore tiny details and test simple balance ideas at home. No app needed.';
+const homeDescription=FAMILY_CHALLENGE_MESSAGE;
 export async function generateMetadata():Promise<Metadata>{
  const origin=getCanonicalOrigin();
  let socialImage='/og-great-signal.png';

@@ -15,6 +15,7 @@ const schema=z.object({
   starName:starNameSchema.optional(),
   publicNameConfirmed:z.boolean().optional(),
   website:z.string().max(0).optional(),
+  language:z.enum(['en','tr']).optional(),
   source:z.string().max(100).optional(),
   medium:z.string().max(100).optional(),
   campaign:z.string().max(100).optional(),
@@ -68,7 +69,7 @@ export async function POST(req:NextRequest) {
       data:{tokenHash,adultEmailHash:emailHash,challengeId:challenge.id,starName,expiresAt,...attributionFields(attribution)},
     });
     try {
-      const sent=await sendVerificationEmail(email,token);
+      const sent=await sendVerificationEmail(email,token,parsed.data.language);
       if(!sent){
         await prisma.emailVerificationToken.deleteMany({where:{tokenHash}});
         console.error('Resend rejected a verification email request.');
