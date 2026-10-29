@@ -6,7 +6,7 @@ import {useDevice,useLanguage} from '@/components/FunnelPreferences';
 import {OFFICIAL_IOS_STORE_URL} from '@/lib/brand';
 import {currentAttribution,type Attribution} from '@/lib/attribution';
 import {trackStoreClick} from '@/lib/client-analytics';
-import {daysUntilAndroidLaunch} from '@/lib/funnel';
+import {daysUntilAndroidLaunch,localizedPath} from '@/lib/funnel';
 
 function subscribeClock(callback:()=>void) {
   const timer=window.setInterval(callback,60000);
@@ -55,7 +55,7 @@ export default function AppDownloadCTA({slug,attribution,compact=false}:{slug?:s
       setJoined(true);
       form.reset();
     } catch(caught) {
-      setError(caught instanceof Error?caught.message:(tr?'Bağlantınızı kontrol edip tekrar deneyin.':'Check your connection and retry.'));
+      setError(tr?'Kayıt onaylanamadı. Bağlantınızı kontrol edip daha sonra tekrar deneyin.':caught instanceof Error?caught.message:'Check your connection and retry.');
     } finally {
       setBusy(false);
     }
@@ -90,8 +90,8 @@ export default function AppDownloadCTA({slug,attribution,compact=false}:{slug?:s
             <button type="submit" className="button button-gold" disabled={busy}>{busy?(tr?'Kaydediliyor…':'Saving…'):(tr?'Bana haber ver':'Notify me')}</button>
           </div>
           <label className="completion-check"><input name="adultConsent" type="checkbox" required/>{tr?'Yetişkinim ve yalnızca ROAMA Kids Android lansman e-postasını almak istiyorum.':'I am an adult and want the ROAMA Kids Android launch email only.'}</label>
-          <label className="completion-honeypot" aria-hidden="true">Leave empty<input name="website" tabIndex={-1} autoComplete="off"/></label>
-          <p className="completion-privacy">{tr?'Çocuk e-postası kullanmayın. Yıldız doğrulamasından ayrıdır; başka pazarlama aboneliği oluşturmaz.':'Do not use a child’s email. Separate from star verification; no other marketing subscription.'} <Link href="/privacy">{tr?'Gizlilik':'Privacy'}</Link></p>
+          <label className="completion-honeypot" aria-hidden="true">{tr?'Boş bırakın':'Leave empty'}<input name="website" tabIndex={-1} autoComplete="off"/></label>
+          <p className="completion-privacy">{tr?'Çocuk e-postası kullanmayın. Yıldız doğrulamasından ayrıdır; başka pazarlama aboneliği oluşturmaz.':'Do not use a child’s email. Separate from star verification; no other marketing subscription.'} <Link href={localizedPath('/privacy',language)}>{tr?'Gizlilik':'Privacy'}</Link></p>
           {error&&<p className="completion-error" role="alert">{error}</p>}
         </form>}
     </div>}

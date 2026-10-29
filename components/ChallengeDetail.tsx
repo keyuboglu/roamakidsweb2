@@ -60,8 +60,8 @@ export default function ChallengeDetail({challenge:original,verificationEnabled}
 
   return <main className="detail-page">
     <div className="detail-brand-row"><Brand href={localizedPath('/',language)}/><Link className="text-link" href={localizedPath('/stars',language)}>{t('Explore a million stars','Bir milyon yıldızı keşfet')} ↗</Link></div>
-    <Link href={localizedPath('/',language)} className="detail-back">← The Great Signal Quest</Link>
-    <p className="eyebrow">{t('CHOOSE ANY ONE CHALLENGE · ages 6–12','İSTEDİĞİNİZ BİR GÖREVİ SEÇİN · 6–12 yaş')} {challenge.duration&&`· ${challenge.duration}`}</p>
+    <Link href={localizedPath('/',language)} className="detail-back">← {t('The Great Signal Quest','Büyük Sinyal Macerası')}</Link>
+    <p className="eyebrow">{t('CHOOSE ANY ONE CHALLENGE · ages 6–12','İSTEDİĞİNİZ BİR GÖREVİ SEÇİN · 6–12 yaş')} {!tr&&challenge.duration&&`· ${challenge.duration}`}</p>
     <h1>{challenge.title}</h1><p className="detail-lede">{challenge.shortDescription}</p>
     <a className="button button-gold" href="#challenge-steps" onClick={start}>{started?t('Continue challenge','Göreve devam et'):t('Start challenge','Göreve başla')} ↓</a>
     <Image className="detail-art" src={imageUrl} alt={challenge.imageAlt} width={661} height={793} loading="eager" unoptimized/>

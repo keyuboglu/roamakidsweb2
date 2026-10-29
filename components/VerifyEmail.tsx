@@ -61,16 +61,16 @@ export default function VerifyEmail() {
   }
 
   if(star)return <main className="detail-page verify-page">
-    <Link href={localizedPath('/',language)} className="detail-back">← The Great Signal Quest</Link>
+    <Link href={localizedPath('/',language)} className="detail-back">← {t('The Great Signal Quest','Büyük Sinyal Macerası')}</Link>
     <p className="eyebrow">{t('YOUR PLACE IN THE SKY','GÖKYÜZÜNDEKİ YERİNİZ')}</p>
     <div className="star-reveal">
-      <svg className="reveal-star" viewBox="0 0 120 120" role="img" aria-label="A golden star">
+      <svg className="reveal-star" viewBox="0 0 120 120" role="img" aria-label={t('A golden star','Altın bir yıldız')}>
         <path d="m60 4 14 37 40 2-31 25 11 39-34-22-34 22 11-39L6 43l40-2z" fill="#e7c374"/>
         <circle cx="60" cy="60" r="57" fill="none" stroke="#e7c374" strokeOpacity=".35"/>
       </svg>
       <h1>{t('Star','Yıldız')} #{String(star.starNumber).padStart(6,'0')}</h1>
       {star.starName&&<p className="reveal-name">{star.starName}</p>}
-      <p className="detail-lede">{star.recovered?t('Your existing permanent star is ready.','Mevcut kalıcı yıldızınız hazır.'):t('Your permanent star is ready.','Kalıcı yıldızınız hazır.')} ROAMA Signal Quest · The Great Signal Quest</p>
+      <p className="detail-lede">{star.recovered?t('Your existing permanent star is ready.','Mevcut kalıcı yıldızınız hazır.'):t('Your permanent star is ready.','Kalıcı yıldızınız hazır.')} {t('ROAMA Signal Quest · The Great Signal Quest','ROAMA Sinyal Macerası · Büyük Sinyal Macerası')}</p>
       <p className="reveal-tagline">{t('One world. One million places to shine.','Tek dünya. Parlamak için bir milyon yer.')}</p>
       <p className="reveal-count">{star.count.toLocaleString(tr?'tr-TR':'en-US')} {t('verified adult-email star claims','doğrulanmış yetişkin e-postasıyla alınan yıldız')}</p>
       <StarCardActions starNumber={star.starNumber} starName={star.starName} attribution={star.attribution} onStatus={setNotice}/>
@@ -81,7 +81,7 @@ export default function VerifyEmail() {
   </main>;
 
   return <main className="detail-page verify-page">
-    <Link href={localizedPath('/',language)} className="detail-back">← The Great Signal Quest</Link>
+    <Link href={localizedPath('/',language)} className="detail-back">← {t('The Great Signal Quest','Büyük Sinyal Macerası')}</Link>
     <p className="eyebrow">{t('ADULT EMAIL CONFIRMATION','YETİŞKİN E-POSTA ONAYI')}</p>
     <h1>{t('Reveal your star.','Yıldızınızı görün.')}</h1>
     <p className="detail-lede">{t('This one-time link confirms the adult email and creates or recovers its permanent star. It expires after 20 minutes.','Bu tek kullanımlık bağlantı yetişkin e-postasını doğrular ve kalıcı yıldızı oluşturur veya mevcut yıldızınızı getirir. 20 dakika sonra geçerliliğini yitirir.')}</p>

@@ -2,8 +2,10 @@ import Link from 'next/link';
 import type {Metadata} from 'next';
 import {getCanonicalOrigin} from '@/lib/site-url';
 import {serializeJsonLd} from '@/lib/json-ld';
+import TurkishPrivacy from '@/components/TurkishPrivacy';
+import {serverLanguage,languageAlternates} from '@/lib/server-language';
 
-export const metadata:Metadata={
+const englishMetadata:Metadata={
   title:'Privacy Information | ROAMA Signal Quest',
   description:'Learn how ROAMA Signal Quest handles adult email verification, public star names, privacy requests, retention, safety and campaign analytics.',
   alternates:{canonical:'/privacy'},
@@ -22,21 +24,32 @@ export const metadata:Metadata={
   },
 };
 
-export default function Privacy() {
+export async function generateMetadata():Promise<Metadata> {
+  const language=await serverLanguage();
+  const title=language==='tr'?'Gizlilik Bilgileri | ROAMA Sinyal Macerası':String(englishMetadata.title);
+  const description=language==='tr'?'Yetişkin e-posta doğrulaması, yıldız adları, Android lansman listesi, saklama ve kampanya analitiği hakkında bilgi alın.':String(englishMetadata.description);
+  return {...englishMetadata,title,description,alternates:languageAlternates('/privacy',language),
+    openGraph:{title,description,url:languageAlternates('/privacy',language).canonical,locale:language==='tr'?'tr_TR':'en_US',images:['/og-great-signal.png']},
+    twitter:{card:'summary',title,description,images:['/og-great-signal.png']}};
+}
+
+export default async function Privacy() {
+  const language=await serverLanguage();
   const origin=getCanonicalOrigin();
   const canonical=`${origin}/privacy`;
   const structuredData={
     '@context':'https://schema.org',
     '@type':'WebPage',
     '@id':`${canonical}#webpage`,
-    url:canonical,
-    name:'Privacy Information | ROAMA Signal Quest',
-    description:'Learn how ROAMA Signal Quest handles adult email verification, public star names, privacy requests, retention, safety and campaign analytics.',
-    inLanguage:'en',
+    url:languageAlternates('/privacy',language).canonical,
+    name:language==='tr'?'Gizlilik Bilgileri | ROAMA Sinyal Macerası':'Privacy Information | ROAMA Signal Quest',
+    description:language==='tr'?'Kampanyanın gizlilik ve veri uygulamaları.':'Learn how ROAMA Signal Quest handles adult email verification, public star names, privacy requests, retention, safety and campaign analytics.',
+    inLanguage:language,
     isPartOf:{'@id':`${origin}/#website`},
   };
+  if(language==='tr')return <><script type="application/ld+json" dangerouslySetInnerHTML={{__html:serializeJsonLd(structuredData)}}/><TurkishPrivacy/></>;
   return <><script type="application/ld+json" dangerouslySetInnerHTML={{__html:serializeJsonLd(structuredData)}}/><main className="detail-page privacy-page">
-    <Link href="/" className="detail-back">← The Great Signal Quest</Link>
+    <Link href="/?lang=en" className="detail-back">← The Great Signal Quest</Link>
     <p className="eyebrow">PRIVACY INFORMATION</p>
     <h1>Participation without a child account.</h1>
     <p className="detail-lede">An adult organizes participation and uses their own email address. No child account is created. For privacy questions or requests, contact <Link href="mailto:info@roama.tech">info@roama.tech</Link>.</p>
@@ -48,6 +61,6 @@ export default function Privacy() {
     <section><h2>Abuse prevention</h2><p>A keyed network hash is used for request throttling and review of unusual bursts. Email requests, token redemption, and public star lookup have database-backed rate limits shared across application instances. Cloudflare schedules daily deletion of completion abuse hashes older than 30 days, rate-limit records older than 24 hours, and expired verification tokens after 24 hours. Operators monitor scheduled maintenance and secure database backups.</p></section>
     <section><h2>Campaign analytics</h2><p>First-party aggregate event records may include campaign and challenge views, explicit challenge starts, self-reported challenge finishes, verification request starts, verified star claims, Android waitlist signups, voluntary riddle-card downloads and shares, copied challenge links, and App Store clicks. A challenge finish is not a verified star claim and does not change the star counter. When a visitor arrives with campaign parameters, sanitized UTM source, medium, campaign and creative labels plus a random referral code are kept in sessionStorage for that tab session and carried into subsequent events. A new tagged arrival replaces the previous campaign attribution. Referral codes identify a link, not a person. These records are used to understand campaign activity and do not use advertising pixels, persistent tracking identities or device fingerprinting. Device and browser language are read locally to select app options and translations, not stored as fingerprints. Adult email addresses, verification tokens, and child-identifying information are not intentionally added to analytics events. Sharing is optional and adult-controlled; no social-media post is required to receive a star.</p></section>
     <section><h2>Adult responsibility and safety</h2><p>An adult must supervise the activity, use the safety guidance, and submit their own email—not a child&apos;s. Adult confirmation records a report that the challenge was completed safely; it is not independent verification and does not constitute a universal legal parental-consent mechanism. Public pseudonyms are displayed immediately and are not pre-moderated. Do not include real names or other personal information.</p><p>This information describes the campaign&apos;s current data practices and is not legal advice. Requirements differ by country; the campaign operator should review applicable rules for each market where participation is promoted.</p></section>
-    <p><Link className="text-link" href="/stars">Explore the sky →</Link></p>
+    <p><Link className="text-link" href="/stars?lang=en">Explore the sky →</Link></p>
   </main></>;
 }

@@ -1,6 +1,6 @@
 'use client';
 
-import {useEffect,useSyncExternalStore} from 'react';
+import {createContext,useContext,useEffect,useSyncExternalStore,type ReactNode} from 'react';
 import {usePathname} from 'next/navigation';
 import {currentAttribution} from '@/lib/attribution';
 import {detectDevice,detectLanguage,type Device,type Language} from '@/lib/funnel';
@@ -14,12 +14,19 @@ function subscribe(callback:()=>void) {
   };
 }
 
+const LanguageContext=createContext<Language>('en');
+
+export function LanguageProvider({language,children}:{language:Language;children?:ReactNode}) {
+  return <LanguageContext.Provider value={language}>{children}</LanguageContext.Provider>;
+}
+
 export function useLanguage():Language {
+  const initial=useContext(LanguageContext);
   const pathname=usePathname();
   return useSyncExternalStore(subscribe,()=>{
     void pathname;
     return detectLanguage(window.location.search,navigator.language);
-  },()=>'en');
+  },()=>initial);
 }
 
 export function useDevice():Device|'pending' {

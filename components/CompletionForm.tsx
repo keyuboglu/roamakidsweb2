@@ -4,6 +4,7 @@ import {useState,type FormEvent} from 'react';
 import Link from 'next/link';
 import {attributionFields,currentAttribution} from '@/lib/attribution';
 import {useLanguage} from '@/components/FunnelPreferences';
+import {localizedPath} from '@/lib/funnel';
 
 export default function CompletionForm({challengeSlug,verificationEnabled}:{challengeSlug:string;verificationEnabled:boolean}) {
   const language=useLanguage();
@@ -49,7 +50,7 @@ export default function CompletionForm({challengeSlug,verificationEnabled}:{chal
 
   if(!verificationEnabled)return <div className="claim-paused" role="status">
     <p><strong>{tr?'E-posta doğrulaması geçici olarak kullanılamıyor.':'Email verification is temporarily unavailable.'}</strong> {tr?'E-posta toplanmaz ve yıldız oluşturulmaz. Görevi uygulama olmadan gizli olarak tamamlayabilirsiniz.':'No email is collected and no star is created. You can still complete this challenge privately without the app.'}</p>
-    <Link href="/privacy">{tr?'Gizlilik bilgileri':'Privacy information'}</Link>
+    <Link href={localizedPath('/privacy',language)}>{tr?'Gizlilik bilgileri':'Privacy information'}</Link>
   </div>;
 
   return <form className="completion-form" onSubmit={event=>void submit(event)}>
@@ -61,9 +62,9 @@ export default function CompletionForm({challengeSlug,verificationEnabled}:{chal
     </label>
     {starName.trim()&&<label className="completion-check"><input name="publicNameConfirmed" type="checkbox" required/> {tr?'Bu adın hayalî olduğunu, kişisel bilgi içermediğini ve herkese açık gösterilebileceğini onaylıyorum.':'I confirm this is a fictional name with no personal information and may be shown publicly.'}</label>}
     <label className="completion-check"><input name="adultConfirmed" type="checkbox" required/> {tr?'Yetişkin düzenleyiciyim ve görevin güvenle tamamlandığını onaylıyorum.':'I am an adult organizer and confirm that the challenge was completed safely.'}</label>
-    <label className="completion-honeypot" aria-hidden="true">Leave this field empty<input name="website" tabIndex={-1} autoComplete="off"/></label>
+    <label className="completion-honeypot" aria-hidden="true">{tr?'Bu alanı boş bırakın':'Leave this field empty'}<input name="website" tabIndex={-1} autoComplete="off"/></label>
     <button className="button button-gold" type="submit" disabled={busy}>{busy?(tr?'Gönderiliyor…':'Sending verification…'):(tr?'Doğrulama bağlantısını e-postayla gönder':'Email me a verification link')}</button>
-    <p className="completion-privacy">{tr?'Çocuk e-postası değil, yetişkin e-postası kullanın. Doğrulama pazarlama izni değildir.':'Use an adult email, not a child’s. Verification is not marketing consent.'} <Link href="/privacy">{tr?'Gizlilik ayrıntıları':'Privacy details'}</Link></p>
+    <p className="completion-privacy">{tr?'Çocuk e-postası değil, yetişkin e-postası kullanın. Doğrulama pazarlama izni değildir.':'Use an adult email, not a child’s. Verification is not marketing consent.'} <Link href={localizedPath('/privacy',language)}>{tr?'Gizlilik ayrıntıları':'Privacy details'}</Link></p>
     {message&&<p className="completion-message" role="status">{message}</p>}
     {error&&<p className="completion-error" role="alert">{error}</p>}
   </form>;

@@ -21,7 +21,6 @@ export function daysUntilAndroidLaunch(now=Date.now()) {
 }
 
 export function localizedPath(path:string,language:Language) {
-  if(language==='en')return path;
   const [base,hash]=path.split('#');
   const [pathname,query='']=base.split('?');
   const params=new URLSearchParams(query);

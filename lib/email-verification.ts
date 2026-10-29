@@ -31,7 +31,7 @@ export async function sendVerificationEmail(email:string,token:string,language:L
   const url=new URL(baseUrl);
   if(process.env.NODE_ENV==='production'&&url.protocol!=='https:')throw new Error('NEXT_PUBLIC_SITE_URL must use HTTPS in production.');
   const tr=language==='tr';
-  const verificationUrl=`${url.origin}/verify-email${tr?'?lang=tr':''}#${token}`;
+  const verificationUrl=`${url.origin}/verify-email?lang=${language}#${token}`;
   const response=await fetch('https://api.resend.com/emails',{
     method:'POST',
     headers:{Authorization:`Bearer ${apiKey}`,'Content-Type':'application/json'},

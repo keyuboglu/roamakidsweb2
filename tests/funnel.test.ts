@@ -29,6 +29,7 @@ describe('device and language funnel selection',()=>{
     expect(detectLanguage('','de-DE')).toBe('en');
     expect(localizedPath('/challenge/shadow-signal?utm_source=tiktok#steps','tr')).toBe('/challenge/shadow-signal?utm_source=tiktok&lang=tr#steps');
     expect(localizedPath('/#challenges','tr')).toBe('/?lang=tr#challenges');
+    expect(localizedPath('/#challenges','en')).toBe('/?lang=en#challenges');
   });
 
   it('uses a fixed launch date instead of resetting an eight-day promise on each visit',()=>{
@@ -89,5 +90,9 @@ describe('private Android email storage',()=>{
     expect(body.text).toContain(`https://signalquest.roama.tech/verify-email?lang=tr#${token}`);
     expect(body.subject).toContain('doğrulayın');
     expect(body.html).not.toContain('?token=');
+    await sendVerificationEmail('adult@example.test',token,'en');
+    const english=JSON.parse(fetchMock.mock.calls[1][1].body);
+    expect(english.text).toContain(`/verify-email?lang=en#${token}`);
+    expect(english.subject).toBe('Verify your ROAMA Signal Quest star');
   });
 });
