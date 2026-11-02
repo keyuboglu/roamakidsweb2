@@ -11,6 +11,8 @@ import AppDownloadCTA from '@/components/AppDownloadCTA';
 import {useLanguage} from '@/components/FunnelPreferences';
 import {FAMILY_CHALLENGE_MESSAGE,localizedPath} from '@/lib/funnel';
 import {turkishChallenges} from '@/lib/challenge-translations';
+import {challengeDisplayArtwork} from '@/lib/challenge-content';
+import {shouldRevealStarCount} from '@/lib/stars';
 
 type Challenge={slug:string;title:string;shortDescription:string;instructions?:string;duration?:string|null;safety?:string;imageUrl?:string|null};
 export type Campaign={configured:boolean;count:number|null;goal:number;title?:string;headline?:string;description?:string;milestones?:({threshold:number;label:string}|number)[];challenges:Challenge[];iosStoreUrl?:string|null;androidStoreUrl?:string|null;error?:string};
@@ -18,7 +20,7 @@ const empty:Campaign={configured:false,count:null,goal:1_000_000,challenges:[]};
 
 function useCampaign(initial:Campaign) {
   const [data,setData]=useState(initial);
-  const [status,setStatus]=useState<'ready'|'error'>(initial.configured?'ready':'error');
+  const [status,setStatus]=useState<'loading'|'ready'|'error'>(initial.configured?'ready':'loading');
   const refresh=useCallback(async()=>{
     try {
       const response=await fetch('/api/campaign',{cache:'no-store'});
@@ -31,8 +33,9 @@ function useCampaign(initial:Campaign) {
     }
   },[]);
   useEffect(()=>{
+    const initialRequest=window.setTimeout(()=>void refresh(),0);
     const timer=window.setInterval(()=>void refresh(),30000);
-    return ()=>clearInterval(timer);
+    return ()=>{clearTimeout(initialRequest);clearInterval(timer);};
   },[refresh]);
   return {data,status,refresh};
 }
@@ -44,8 +47,8 @@ function Stars() {
 export default function Quest({initialData=empty}:{initialData?:Campaign}) {
   const {data,status,refresh}=useCampaign(initialData);
   const count=data.count;
+  const firstLight=count!==null&&!shouldRevealStarCount(count);
   const progress=count===null?0:Math.min(count/data.goal*100,100);
-  const litStars=count===null?0:Math.round(progress/100*28);
   const language=useLanguage();
   const tr=language==='tr';
   const t=(en:string,turkish:string)=>tr?turkish:en;
@@ -112,9 +115,9 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
         <span className="scene-star scene-star-two" aria-hidden="true">✧</span>
         <div className="scene-island island-one" aria-hidden="true"/>
         <div className="scene-island island-two" aria-hidden="true"/>
-        <figure className="hero-artwork hero-artwork-shadow"><Image src="/images/challenges/shadow-signal.png" alt="" width={661} height={793} priority unoptimized/></figure>
-        <figure className="hero-artwork hero-artwork-micro"><Image src="/images/challenges/micro-world-safari.png" alt="" width={661} height={793} loading="lazy" unoptimized/></figure>
-        <figure className="hero-artwork hero-artwork-gravity"><Image src="/images/challenges/gravity-defier.png" alt="" width={661} height={793} loading="lazy" unoptimized/></figure>
+        <figure className="hero-artwork hero-artwork-shadow"><Image src="/images/challenges/shadow-signal.webp" alt="" width={661} height={793} priority unoptimized/></figure>
+        <figure className="hero-artwork hero-artwork-micro"><Image src="/images/challenges/micro-world-safari.webp" alt="" width={661} height={793} loading="lazy" unoptimized/></figure>
+        <figure className="hero-artwork hero-artwork-gravity"><Image src="/images/challenges/gravity-defier.webp" alt="" width={661} height={793} loading="lazy" unoptimized/></figure>
         <span className="scene-caption">{t('REAL-WORLD CURIOSITY · ROAMA KIDS ADVENTURE','GERÇEK DÜNYADA MERAK · ROAMA KIDS MACERASI')}</span>
       </div>
     </section>
@@ -127,8 +130,8 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
         const title=translation?.title||(challenge.title===presentation.defaultTitle?presentation.title:challenge.title.replace(/^The\s+/i,'').toUpperCase());
         const description=translation?.shortDescription||(challenge.shortDescription===presentation.defaultDescription?presentation.description:challenge.shortDescription);
         return <article className={`challenge-card challenge-card-${presentation.accent}`} key={challenge.slug}>
-          <a className="challenge-card-link" href={localizedPath(`/challenge/${challenge.slug}`,language)} aria-label={`${title}: ${description} ${tr?'Göreve başla':'Start challenge'}`}>
-            <span className="challenge-card-image-wrap"><Image className="challenge-card-image" src={challenge.imageUrl||'/og-great-signal.svg'} alt={translation?.imageAlt||presentation.alt} width={661} height={793} unoptimized/></span>
+          <a className="challenge-card-link" href={localizedPath(`/challenge/${challenge.slug}`,language)}>
+            <span className="challenge-card-image-wrap"><Image className="challenge-card-image" src={challengeDisplayArtwork(challenge.slug,challenge.imageUrl)||'/og-great-signal.svg'} alt={translation?.imageAlt||presentation.alt} width={661} height={793} unoptimized/></span>
             <span className="challenge-info"><span className="challenge-index">{tr?'GÖREV':'MISSION'} 0{index+1}</span><span className="challenge-title">{title}</span><span className="challenge-description">{description}</span><span className="card-link">{tr?'GÖREVE BAŞLA':'START CHALLENGE'} <span aria-hidden="true">↗</span></span></span>
           </a>
         </article>;
@@ -143,7 +146,7 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
     <section className="star-journey" aria-labelledby="star-journey-heading">
       <div className="journey-heading"><p className="eyebrow">{t('A REAL-WORLD DISCOVERY, A ROAMA KIDS STORY','GERÇEK BİR KEŞİF, BİR ROAMA KIDS HİKÂYESİ')}</p><h2 id="star-journey-heading">{t('YOUR DISCOVERY','KEŞFİNİZ')}<br/><em>{t('BECOMES A STAR','BİR YILDIZA DÖNÜŞÜR')}</em></h2><p>{t('Every completed challenge adds to the ROAMA Kids adventure story.','Tamamlanan her görev ROAMA Kids macera hikâyesine katkı sağlar.')}</p></div>
       <div className="journey-track" aria-label={t('Illustration of a child completing a challenge, a star symbolizing the achievement, and that star joining a constellation','Bir çocuğun görevi tamamlamasını, başarının yıldızla kutlanmasını ve yıldızın takımyıldıza katılmasını anlatan görsel')}>
-        <article className="journey-stage"><span className="journey-art"><Image src="/images/challenges/micro-world-safari.png" alt="" width={661} height={793} loading="lazy" unoptimized/></span><span className="journey-step-label">01 · {t('DISCOVER','KEŞFET')}</span><h3>{t('Explore beyond the screen.','Ekranın ötesini keşfedin.')}</h3></article>
+        <article className="journey-stage"><span className="journey-art"><Image src="/images/challenges/micro-world-safari.webp" alt="" width={661} height={793} loading="lazy" unoptimized/></span><span className="journey-step-label">01 · {t('DISCOVER','KEŞFET')}</span><h3>{t('Explore beyond the screen.','Ekranın ötesini keşfedin.')}</h3></article>
         <span className="journey-connector" aria-hidden="true">→</span>
         <article className="journey-stage journey-stage-star"><span className="journey-star" aria-hidden="true">✦</span><span className="journey-step-label">02 · {t('CELEBRATE','KUTLA')}</span><h3>{t('A star marks the achievement.','Başarınız bir yıldızla kutlanır.')}</h3></article>
         <span className="journey-connector" aria-hidden="true">→</span>
@@ -153,11 +156,30 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
     </section>
     <section className="counter-section" aria-labelledby="counter-title">
       <div className="counter-intro"><p className="eyebrow">{t('OUR SHARED JOURNEY','ORTAK YOLCULUĞUMUZ')}</p><h2 id="counter-title">{t('Every discovery','Her keşif')}<br/>{t('leaves a little light.','küçük bir ışık bırakır.')}</h2><p>{t('Only completed challenges with a verified adult organizer email are counted as permanent stars.','Yalnızca yetişkin düzenleyicinin e-postası doğrulanan tamamlanmış görevler kalıcı yıldız olarak sayılır.')}</p><Link className="counter-map-link" href={localizedPath('/stars',language)}>{t('See the million-star sky','Bir milyon yıldızlık gökyüzünü gör')} ↗</Link></div>
-      <div className="counter-card"><div className="counter-head"><span>{t('VERIFIED ADULT STAR CLAIMS','DOĞRULANMIŞ YETİŞKİN YILDIZ TALEPLERİ')}</span><span className="live"><i/> {t('LIVE COUNT','CANLI SAYI')}</span></div><div className="count-line" aria-live="polite" aria-atomic="true"><strong>{count===null?'—':count.toLocaleString(locale)}</strong><span>/ {data.goal.toLocaleString(locale)} {t('stars','yıldız')}</span></div>{count!==null?<div className="progress-track" role="progressbar" aria-label={t('Verified adult-email star claims toward the campaign target','Kampanya hedefine doğru doğrulanmış yetişkin yıldız talepleri')} aria-valuemin={0} aria-valuemax={data.goal} aria-valuenow={Math.min(count,data.goal)}><span style={{width:`${progress}%`}}/></div>:<div className="counter-unavailable" aria-hidden="true"/>}<div className="progress-label"><span>{status==='error'?t('The live count is temporarily unavailable','Canlı sayı geçici olarak kullanılamıyor'):tr?`HEDEFİMİZİN %${progress.toLocaleString(locale,{minimumFractionDigits:progress<1?2:1,maximumFractionDigits:progress<1?2:1})}`:`${progress.toFixed(progress<1?2:1)}% OF OUR GOAL`}</span><span>{data.goal.toLocaleString(locale)}</span></div>{status==='error'&&<button className="retry" onClick={()=>void refresh()}>{t('Try again','Tekrar dene')}</button>}<div className="mini-constellation" aria-hidden="true">{Array.from({length:28},(_,index)=><span key={index} style={{left:`${(index*37+9)%97}%`,top:`${(index*23+14)%80}%`,opacity:index<litStars?0.78:0.08}}/>)}<div className="mini-message">{t('A constellation','Bir takımyıldız')}<br/>{t('in the making.','doğuyor.')}</div></div><p className="count-foot">{t('One permanent star per verified adult email. No visits or unverified submissions are counted.','Her doğrulanmış yetişkin e-postasına bir kalıcı yıldız. Ziyaretler veya doğrulanmamış başvurular sayılmaz.')}</p></div>
+      <div className="counter-card"><div className="counter-head"><span>{t('VERIFIED ADULT STAR CLAIMS','DOĞRULANMIŞ YETİŞKİN YILDIZ TALEPLERİ')}</span><span className="live"><i/> {status==='loading'?t('UPDATING','GÜNCELLENİYOR'):t('LIVE COUNT','CANLI SAYI')}</span></div>
+        {firstLight
+          ?<p className="first-light-copy" aria-live="polite">{t('First light — help us light the first 100 stars','İlk ışık — ilk 100 yıldızı yakmamıza yardım edin')}</p>
+          :count!==null
+            ?<><div className="count-line" aria-live="polite" aria-atomic="true"><strong>{count.toLocaleString(locale)}</strong><span>/ {data.goal.toLocaleString(locale)} {t('stars','yıldız')}</span></div><div className="progress-track" role="progressbar" aria-label={t('Verified adult-email star claims toward the campaign target','Kampanya hedefine doğru doğrulanmış yetişkin yıldız talepleri')} aria-valuemin={0} aria-valuemax={data.goal} aria-valuenow={Math.min(count,data.goal)}><span style={{width:`${progress}%`}}/></div><div className="progress-label"><span>{tr?`HEDEFİMİZİN %${progress.toLocaleString(locale,{minimumFractionDigits:progress<1?2:1,maximumFractionDigits:progress<1?2:1})}`:`${progress.toFixed(progress<1?2:1)}% OF OUR GOAL`}</span><span>{data.goal.toLocaleString(locale)}</span></div></>
+            :<p className="count-unavailable" role="status">{status==='loading'?t('Checking verified stars…','Doğrulanmış yıldızlar kontrol ediliyor…'):t('Verified star count temporarily unavailable','Doğrulanmış yıldız sayısı şu anda alınamıyor')}</p>}
+        {status==='error'&&<button className="retry" onClick={()=>void refresh()}>{t('Try again','Tekrar dene')}</button>}
+        <div className="mini-constellation" aria-hidden="true">{Array.from({length:firstLight?(count||0):28},(_,index)=><span key={index} style={{left:`${(index*37+9)%97}%`,top:`${(index*23+14)%80}%`,opacity:index<(firstLight?(count||0):Math.round(progress/100*28))?0.82:0.08}}/>)}<div className="mini-message">{firstLight?t('A first light in the star map.','Yıldız haritasında ilk ışık.'):t('A constellation','Bir takımyıldız')}<br/>{!firstLight&&t('in the making.','doğuyor.')}</div></div><p className="count-foot">{t('One permanent star per verified adult email. No visits or unverified submissions are counted.','Her doğrulanmış yetişkin e-postasına bir kalıcı yıldız. Ziyaretler veya doğrulanmamış başvurular sayılmaz.')}</p></div>
     </section>
     <section className="parent-section" id="parents" aria-labelledby="parents-heading">
       <div className="parent-visual"><Image src="/roama-logo.webp" alt={t('Official ROAMA Kids fox logo','Resmî ROAMA Kids tilki logosu')} width={192} height={192} unoptimized/><span className="parent-visual-star" aria-hidden="true">✦</span><span className="parent-visual-caption">{t('CURIOUS TOGETHER','BİRLİKTE MERAK EDİN')}</span></div>
       <div className="parent-copy"><p className="eyebrow">{t('A NOTE FOR GROWN-UPS','YETİŞKİNLERE BİR NOT')}</p><h2 id="parents-heading">{t('ADVENTURES TO','BİRLİKTE')}<br/><em>{t('EXPLORE TOGETHER','KEŞFEDİLECEK MACERALAR')}</em></h2><p>{t('ROAMA Signal Quest encourages children ages 6–12 to explore the world around them through simple, real-world activities.','ROAMA Sinyal Macerası, 6–12 yaş çocukları basit gerçek dünya etkinlikleriyle çevrelerini keşfetmeye teşvik eder.')}</p><ul>{(tr?['Günlük malzemeler ve erişilebilir etkinlikler.','Görevler boyunca yetişkin desteği ve gözetimi.','Merak, yaratıcılık ve keşif.','Uygulama maceraları ile gerçek dünya keşfi arasında özenli bir denge.']:['Everyday materials and accessible activities.','Adult support and supervision during challenges.','Curiosity, creativity, and discovery.','A thoughtful balance between app adventures and real-world exploration.']).map(item=><li key={item}>{item}</li>)}</ul><div className="parent-actions"><a className="button button-gold" href="#get-app">{tr?'ROAMA Kids uygulamasını keşfet':'DISCOVER THE ROAMA KIDS APP'} ↗</a><Link className="text-link" href={localizedPath('/privacy',language)}>{t('Privacy information','Gizlilik bilgileri')} <span>→</span></Link></div><p className="bridge-foot">{t('No app download, photo, video or public post is needed to join a challenge.','Bir göreve katılmak için uygulama indirmek, fotoğraf, video veya herkese açık paylaşım gerekmez.')}</p></div>
+    </section>
+    <section className="teacher-section" id="teachers" aria-labelledby="teachers-heading">
+      <div>
+        <p className="eyebrow">{t('FOR TEACHERS & CLUBS','ÖĞRETMENLER VE KULÜPLER İÇİN')}</p>
+        <h2 id="teachers-heading">{t('Bring screen-free discovery to your group.','Grubunuzla ekransız keşifler yapın.')}</h2>
+        <p>{t('Three practical, grown-up-led activities for ages 6–12, designed for families, classrooms and clubs. Choose a challenge, use everyday materials and explore together.','Aileler, sınıflar ve kulüpler için tasarlanmış, 6–12 yaşa yönelik üç uygulamalı ve yetişkin eşliğinde etkinlik. Bir görev seçin, günlük malzemeleri kullanın ve birlikte keşfedin.')}</p>
+        <p>{t('No student account, name, email or other student data is requested or needed.','Öğrenci hesabı, adı, e-postası veya başka bir öğrenci verisi istenmez ya da gerekmez.')}</p>
+      </div>
+      <nav className="teacher-pack-links" aria-label={t('Teacher resources','Öğretmen kaynakları')}>
+        <a href="/teacher-pack.pdf" target="_blank" rel="noreferrer">{t('Download the teacher pack (PDF)','Öğretmen paketini indir (PDF)')} ↗</a>
+        <a href="/packs/2026-11.pdf" target="_blank" rel="noreferrer">{t('Download the November 2026 activity pack (PDF)','Kasım 2026 etkinlik paketini indir (PDF)')} ↗</a>
+      </nav>
     </section>
     <section className="home-app-section" id="get-app" aria-labelledby="get-app-heading">
       <p className="eyebrow">ROAMA KIDS · {tr?'6–12 yaş':'ages 6–12'}</p>

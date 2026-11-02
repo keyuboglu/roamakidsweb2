@@ -6,6 +6,11 @@ export const STAR_WORLD_SIZE=STAR_COLUMNS*STAR_SPACING;
 export const STAR_TILE_SIZE=50;
 export const STAR_TILE_COUNT=STAR_COLUMNS/STAR_TILE_SIZE;
 export const STAR_NAME_MAX_LENGTH=40;
+export const FIRST_LIGHT_THRESHOLD=100;
+
+export function shouldRevealStarCount(count:number) {
+  return Number.isInteger(count)&&count>=FIRST_LIGHT_THRESHOLD;
+}
 
 export type PublicStar={starNumber:number;starName:string|null};
 export type StarTile={tileX:number;tileY:number;count:number};

@@ -7,9 +7,9 @@ export async function serverLanguage():Promise<Language> {
 }
 
 export function languageAlternates(path:string,language:Language) {
-  const base=`${getCanonicalOrigin()}${path}`;
+  const base=`${getCanonicalOrigin()}${path||'/'}`;
   return {
-    canonical:language==='tr'?`${base}?lang=tr`:base,
-    languages:{en:`${base}?lang=en`,tr:`${base}?lang=tr`,'x-default':base},
+    canonical:`${base}?lang=${language}`,
+    languages:{en:`${base}?lang=en`,tr:`${base}?lang=tr`,'x-default':`${base}?lang=en`},
   };
 }

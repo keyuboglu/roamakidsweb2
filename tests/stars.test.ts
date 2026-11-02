@@ -1,8 +1,14 @@
 import {describe,expect,it} from 'vitest';
-import {buildStarPixels,isStarNumber,STAR_CAPACITY,STAR_COLUMNS,STAR_ROWS,STAR_TILE_COUNT,starPosition,starTile,starTileRanges} from '@/lib/stars';
+import {buildStarPixels,isStarNumber,shouldRevealStarCount,STAR_CAPACITY,STAR_COLUMNS,STAR_ROWS,STAR_TILE_COUNT,starPosition,starTile,starTileRanges} from '@/lib/stars';
 import {completionSchema} from '@/lib/completion-input';
 
 describe('million-star map',()=>{
+  it('keeps the public total hidden until one hundred verified stars exist',()=>{
+    for(const count of [0,1,2,99])expect(shouldRevealStarCount(count)).toBe(false);
+    for(const count of [100,101])expect(shouldRevealStarCount(count)).toBe(true);
+    expect(shouldRevealStarCount(99.5)).toBe(false);
+  });
+
   it('renders exactly one million distinct star pixels, not one million DOM nodes',()=>{
     expect(STAR_COLUMNS*STAR_ROWS).toBe(1_000_000);
     const pixels=buildStarPixels();

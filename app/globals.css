@@ -423,3 +423,36 @@ footer>div{align-items:center;font-size:11px;color:#d5dded}
 @media(max-width:360px){
   .waitlist-input-row{flex-direction:column}
 }
+.app-download-pending{grid-template-columns:1fr 1fr}
+.first-light-copy{position:relative;z-index:1;max-width:330px;margin:26px 0 0;color:#ffe4a0;font-family:Georgia,"Times New Roman",serif;font-size:clamp(20px,2.4vw,27px);line-height:1.35}
+.count-unavailable{position:relative;z-index:1;margin:28px 0;color:#d4dbe5;font-size:14px;line-height:1.6}
+.star-total p{max-width:260px;margin:0;color:#f5d994;font-size:clamp(15px,2vw,20px);line-height:1.45}
+.teacher-section{display:grid;grid-template-columns:1.2fr .8fr;gap:40px;align-items:center;padding:80px max(24px,11%);background:#f0ece3;color:var(--ink)}
+.teacher-section .eyebrow{color:#684913}
+.teacher-section h2{max-width:680px;font-size:clamp(34px,4vw,48px);line-height:1.15}
+.teacher-section p:not(.eyebrow){max-width:680px;color:#4f5968;line-height:1.75}
+.teacher-pack-links{display:grid;gap:12px}
+.teacher-pack-links a{min-height:52px;padding:14px 16px;border:1px solid #6d552a;border-radius:4px;color:#4c3918;font-weight:650;line-height:1.4}
+.teacher-pack-links a:hover{background:#e5ddcd}
+.teacher-pack-links a:focus-visible{outline:3px solid #71531c;outline-offset:3px}
+.challenge-share{margin:24px 0;padding:24px;border:1px solid rgba(231,195,116,.35);border-radius:12px;background:#101d34}
+.challenge-share h2{font-size:clamp(22px,3vw,30px)}
+.challenge-share p{color:#d1d8e2;line-height:1.6}
+.challenge-share-actions{display:flex;flex-wrap:wrap;gap:12px}
+.button-share{min-height:48px;border:1px solid #e7c374;background:transparent;color:#ffe4a0;border-radius:4px;padding:12px 18px}
+.button-share:hover{background:#203453}
+.challenge-share-status{min-height:1.6em;margin:12px 0 0;font-size:13px}
+.counter-intro .eyebrow,.section-heading .eyebrow,.how-title .eyebrow,.milestone-section .eyebrow{color:#684913}
+.milestone-copy{color:#4f5968}
+.milestone-label,.milestone-status{color:#4f5968}
+:focus-visible{outline-color:#d5a943}
+@media(max-width:700px){
+  .teacher-section{grid-template-columns:1fr;gap:20px;padding:56px 22px}
+  .app-download-pending{grid-template-columns:1fr}
+  .challenge-share{padding:20px 16px}
+  .challenge-share-actions>*{flex:1}
+}
+@media(prefers-reduced-motion:reduce){
+  html{scroll-behavior:auto}
+  *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
+}

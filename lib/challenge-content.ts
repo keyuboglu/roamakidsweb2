@@ -8,6 +8,11 @@ export function challengeArtwork(slug:string,fallback?:string|null) {
   return challengeArtworkBySlug[slug]||fallback||null;
 }
 
+export function challengeDisplayArtwork(slug:string,fallback?:string|null) {
+  const image=challengeArtwork(slug,fallback);
+  return image&&challengeArtworkBySlug[slug]?image.replace(/\.png$/i,'.webp'):image;
+}
+
 export type CampaignChallengeOverride={
   slug:string;
   title:string;

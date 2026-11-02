@@ -1,23 +1,17 @@
 'use client';
 
-import {useId,useState,useSyncExternalStore,type FormEvent} from 'react';
+import {useId,useState,type FormEvent} from 'react';
 import Link from 'next/link';
 import {useDevice,useLanguage} from '@/components/FunnelPreferences';
-import {OFFICIAL_IOS_STORE_URL} from '@/lib/brand';
+import {appStoreUrl,OFFICIAL_IOS_STORE_URL} from '@/lib/brand';
 import {currentAttribution,type Attribution} from '@/lib/attribution';
 import {trackStoreClick} from '@/lib/client-analytics';
-import {daysUntilAndroidLaunch,localizedPath} from '@/lib/funnel';
+import {localizedPath} from '@/lib/funnel';
 
-function subscribeClock(callback:()=>void) {
-  const timer=window.setInterval(callback,60000);
-  return ()=>window.clearInterval(timer);
-}
-
-export default function AppDownloadCTA({slug,attribution,compact=false}:{slug?:string;attribution?:Attribution;compact?:boolean}) {
+export default function AppDownloadCTA({slug,attribution,compact=false,completion=false}:{slug?:string;attribution?:Attribution;compact?:boolean;completion?:boolean}) {
   const language=useLanguage();
   const device=useDevice();
   const tr=language==='tr';
-  const days=useSyncExternalStore(subscribeClock,daysUntilAndroidLaunch,daysUntilAndroidLaunch);
   const id=useId();
   const [busy,setBusy]=useState(false);
   const [joined,setJoined]=useState(false);
@@ -61,28 +55,28 @@ export default function AppDownloadCTA({slug,attribution,compact=false}:{slug?:s
     }
   }
 
+  const campaign=completion?'signalquest_complete':'signalquest';
+  const storeUrl=completion?appStoreUrl(campaign):OFFICIAL_IOS_STORE_URL;
+
   if(compact){
-    if(device==='ios')return <a className="nav-cta nav-cta-store" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios',slug,attribution)}>App Store ↗</a>;
+    if(device==='ios')return <a className="nav-cta nav-cta-store" href={storeUrl} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios',slug,attribution)}>App Store ↗</a>;
     return <a className="nav-cta nav-cta-store" href="#get-app">{device==='android'?(tr?'Android erken erişim':'Android early access'):(tr?'Uygulamayı keşfet':'Get the app')} ↗</a>;
   }
 
-  const heading=days>0
-    ?(tr?`Google Play lansmanına ${days} gün! Erken Kaşif Erişimi Alın`:`Launching on Google Play in ${days} Days! Get Early Explorer Access`)
-    :(tr?'Google Play çok yakında! Erken Kaşif Erişimi Alın':'Coming to Google Play! Get Early Explorer Access');
+  const showStore=device==='ios'||device==='desktop'||device==='pending';
+  const showWaitlist=device==='android'||device==='desktop'||device==='pending';
 
-  return <div className={`app-download-options app-download-${device}`} aria-busy={device==='pending'}>
-    {device==='pending'&&<p role="status">{tr?'Uygulama seçenekleri yükleniyor…':'Loading app options…'}</p>}
-    {(device==='ios'||device==='desktop')&&<div className="ios-download">
-      <a className="button button-gold app-store-button" href={OFFICIAL_IOS_STORE_URL} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios',slug,attribution)}>
+  return <div className={`app-download-options app-download-${device}`}>
+    {showStore&&<div className="ios-download">
+      <a className="button button-gold app-store-button" href={storeUrl} target="_blank" rel="noreferrer" onClick={()=>trackStoreClick('ios',slug,attribution)}>
         {tr?'Maceraya App Store’da Devam Et':'Continue the Adventure on the App Store'} ↗
       </a>
     </div>}
-    {(device==='android'||device==='desktop')&&<div className="android-waitlist">
-      <h3>{device==='desktop'?(tr?'Android lansmanını bana hatırlat':'Remind me when Android launches'):heading}</h3>
-      {device==='desktop'&&<p className="waitlist-launch-date">{heading}</p>}
+    {showWaitlist&&<div className="android-waitlist">
+      <h3>{device==='desktop'?(tr?'Android lansmanını bana hatırlat':'Remind me when Android launches'):(tr?'Google Play’de çok yakında':'Coming soon on Google Play')}</h3>
       {joined?<p className="completion-message" role="status">{tr
-        ?`Listedesiniz! ROAMA Kids ${days>=7?'gelecek hafta ':''}Google Play’e geldiğinde size e-posta göndereceğiz.`
-        :`You're on the list! We'll email you the moment ROAMA Kids hits Google Play${days>=7?' next week':''}.`}</p>
+        ?'Listeye kaydoldunuz! ROAMA Kids Google Play’de yayınlandığında size e-posta göndereceğiz.'
+        :"You're on the list! We'll email you when ROAMA Kids is available on Google Play."}</p>
         :<form onSubmit={event=>void join(event)}>
           <label htmlFor={`${id}-email`}>{tr?'Yetişkin e-posta adresi':'Adult email address'}</label>
           <div className="waitlist-input-row">

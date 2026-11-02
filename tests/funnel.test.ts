@@ -1,5 +1,5 @@
 import {afterEach,describe,expect,it,vi} from 'vitest';
-import {detectDevice,detectLanguage,daysUntilAndroidLaunch,localizedPath,FAMILY_CHALLENGE_MESSAGE} from '@/lib/funnel';
+import {detectDevice,detectLanguage,localizedPath,FAMILY_CHALLENGE_MESSAGE} from '@/lib/funnel';
 import {campaignChallenges} from '@/lib/challenge-content';
 import {turkishChallenges} from '@/lib/challenge-translations';
 import {encryptWaitlistEmail,decryptWaitlistEmail,waitlistEmailHash} from '@/lib/android-waitlist';
@@ -30,13 +30,6 @@ describe('device and language funnel selection',()=>{
     expect(localizedPath('/challenge/shadow-signal?utm_source=tiktok#steps','tr')).toBe('/challenge/shadow-signal?utm_source=tiktok&lang=tr#steps');
     expect(localizedPath('/#challenges','tr')).toBe('/?lang=tr#challenges');
     expect(localizedPath('/#challenges','en')).toBe('/?lang=en#challenges');
-  });
-
-  it('uses a fixed launch date instead of resetting an eight-day promise on each visit',()=>{
-    expect(daysUntilAndroidLaunch(Date.parse('2026-10-29T09:00:00+03:00'))).toBe(8);
-    expect(daysUntilAndroidLaunch(Date.parse('2026-11-05T12:00:00+03:00'))).toBe(1);
-    expect(daysUntilAndroidLaunch(Date.parse('2026-11-06T00:00:00+03:00'))).toBe(0);
-    expect(daysUntilAndroidLaunch(Date.parse('2027-01-01T00:00:00Z'))).toBe(0);
   });
 
   it('preserves the main ages 6–12 message and translates all original steps and safety guidance',()=>{

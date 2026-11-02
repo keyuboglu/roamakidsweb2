@@ -10,6 +10,7 @@ import StarMap from '@/components/StarMap';
 import VerifyEmail from '@/components/VerifyEmail';
 import {campaignChallenges} from '@/lib/challenge-content';
 import {localizedPath,type Language} from '@/lib/funnel';
+import {languageAlternates} from '@/lib/server-language';
 import {middleware} from '@/middleware';
 
 vi.mock('next/navigation',()=>({usePathname:()=>'/challenge/shadow-signal'}));
@@ -19,6 +20,14 @@ function render(language:Language,element:React.ReactNode) {
 }
 
 describe('separate public language channels',()=>{
+  it('uses self-canonical URLs for each explicit language channel',()=>{
+    expect(languageAlternates('/challenge/shadow-signal','en')).toMatchObject({
+      canonical:'https://signalquest.roama.tech/challenge/shadow-signal?lang=en',
+      languages:{en:'https://signalquest.roama.tech/challenge/shadow-signal?lang=en',tr:'https://signalquest.roama.tech/challenge/shadow-signal?lang=tr'},
+    });
+    expect(languageAlternates('','tr').canonical).toBe('https://signalquest.roama.tech/?lang=tr');
+  });
+
   it('pins English and Turkish links explicitly and preserves query, hash, and verification fragments',()=>{
     expect(localizedPath('/stars?star=42&utm_source=tiktok&lang=tr#map','en')).toBe('/stars?star=42&utm_source=tiktok&lang=en#map');
     expect(localizedPath('/verify-email?lang=en#'+'a'.repeat(64),'tr')).toBe('/verify-email?lang=tr#'+'a'.repeat(64));
@@ -29,11 +38,15 @@ describe('separate public language channels',()=>{
     const initialData={configured:true,count:2,goal:1000000,headline:'A MILLION STARS. ONE GLOBAL QUEST.',description:'English-only admin description',milestones:[{threshold:100,label:'First light'}],challenges:[...campaignChallenges]};
     const tr=render('tr',createElement(Quest,{initialData}));
     expect(tr).toContain('BİR MİLYON YILDIZ.');
+    expect(tr).toContain('İlk ışık — ilk 100 yıldızı yakmamıza yardım edin');
+    expect(tr).not.toContain('class="count-line"');
     expect(tr).toContain('NASIL');
     expect(tr).toContain('Gizlilik bilgileri');
     for(const text of ['English-only admin description','First light','CHOOSE YOUR ADVENTURE','For Parents','Explore the star map','LIVE COUNT','Privacy information','How It Works'])expect(tr).not.toContain(text);
     const en=render('en',createElement(Quest,{initialData}));
     expect(en).toContain('CHOOSE YOUR ADVENTURE');
+    expect(en).toContain('First light — help us light the first 100 stars');
+    expect(en).not.toContain('class="count-line"');
     expect(en).toContain('English-only admin description');
     for(const text of ['BİR MİLYON','Göreve başla','Gizlilik bilgileri','MACERANIZI SEÇİN'])expect(en).not.toContain(text);
   });

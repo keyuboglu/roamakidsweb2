@@ -1,18 +1,21 @@
 'use client';
 
 import {useEffect,useState} from 'react';
+import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import Image from 'next/image';
 import Brand from '@/components/Brand';
-import CompletionForm from '@/components/CompletionForm';
 import RiddleCardActions from '@/components/RiddleCardActions';
-import AppBridge from '@/components/AppBridge';
 import {useLanguage} from '@/components/FunnelPreferences';
 import {localizedPath} from '@/lib/funnel';
 import {turkishChallenges} from '@/lib/challenge-translations';
 import {trackEvent} from '@/lib/client-analytics';
-import {challengeArtwork} from '@/lib/challenge-content';
+import {challengeDisplayArtwork} from '@/lib/challenge-content';
 import {RIDDLE_CARD_COPY} from '@/lib/riddle-cards';
+
+const AppBridge=dynamic(()=>import('@/components/AppBridge'));
+const ChallengeShareActions=dynamic(()=>import('@/components/ChallengeShareActions'));
+const CompletionForm=dynamic(()=>import('@/components/CompletionForm'));
 
 type Challenge={
   slug:string;
@@ -41,7 +44,7 @@ export default function ChallengeDetail({challenge:original,verificationEnabled}
   const instructionLines=challenge.instructions.split('\n').filter(Boolean);
   const steps=instructionLines.filter(line=>/^\d+\.\s/.test(line));
   const notes=instructionLines.filter(line=>!/^\d+\.\s/.test(line));
-  const imageUrl=challengeArtwork(challenge.slug,challenge.imageUrl)||'/og-great-signal.svg';
+  const imageUrl=challengeDisplayArtwork(challenge.slug,challenge.imageUrl)||'/og-great-signal.svg';
   const cardCopy=RIDDLE_CARD_COPY[challenge.slug]||null;
 
   useEffect(()=>trackEvent('challenge_view',{slug:challenge.slug}),[challenge.slug]);
@@ -64,7 +67,7 @@ export default function ChallengeDetail({challenge:original,verificationEnabled}
     <p className="eyebrow">{t('CHOOSE ANY ONE CHALLENGE · ages 6–12','İSTEDİĞİNİZ BİR GÖREVİ SEÇİN · 6–12 yaş')} {!tr&&challenge.duration&&`· ${challenge.duration}`}</p>
     <h1>{challenge.title}</h1><p className="detail-lede">{challenge.shortDescription}</p>
     <a className="button button-gold" href="#challenge-steps" onClick={start}>{started?t('Continue challenge','Göreve devam et'):t('Start challenge','Göreve başla')} ↓</a>
-    <Image className="detail-art" src={imageUrl} alt={challenge.imageAlt} width={661} height={793} loading="eager" unoptimized/>
+    <Image className="detail-art" src={imageUrl} alt={challenge.imageAlt} width={661} height={793} priority unoptimized/>
     {challenge.description&&<section><h2>{t('Discover','Keşfedin')}</h2><p>{challenge.description}</p></section>}
     <section className="challenge-facts"><h2>{t('Time and materials','Süre ve malzemeler')}</h2><dl><div><dt>{t('Time','Süre')}</dt><dd>{challenge.estimatedTime}</dd></div><div><dt>{t('Materials','Malzemeler')}</dt><dd>{challenge.materials}</dd></div></dl></section>
     <section id="challenge-steps"><h2>{t('Your challenge','Göreviniz')}</h2>{steps.length>0?<ol className="challenge-instructions">{steps.map(step=><li key={step}>{step.replace(/^\d+\.\s/,'')}</li>)}</ol>:<p>{challenge.instructions}</p>}{notes.map(note=><p className="challenge-note" key={note}>{note}</p>)}</section>
@@ -75,7 +78,7 @@ export default function ChallengeDetail({challenge:original,verificationEnabled}
     <section className="detail-complete"><h2>{t('Completed this challenge?','Görevi tamamladınız mı?')}</h2><p>{t('Participation is private by default. No app download, photo, video or sign-up is required. By confirming below, an adult organizer reports that the activity was completed safely.','Katılım varsayılan olarak gizlidir. Uygulama, fotoğraf, video veya kayıt gerekmez. Aşağıda onay veren yetişkin, etkinliğin güvenle tamamlandığını bildirir.')}</p>
       <button className="button button-gold" onClick={complete} disabled={completed}>{completed?t('Challenge completed!','Görev tamamlandı!'):t('Our family completed this challenge','Ailece bu görevi tamamladık')}</button>
     </section>
-    {completed&&<><AppBridge slug={challenge.slug}/><section className="detail-complete"><h2>{t('Claim a star (optional)','Yıldızınızı alın (isteğe bağlı)')}</h2><p>{t('Only an adult email verification creates a permanent web star. This is separate from the Android launch list.','Kalıcı web yıldızı yalnızca yetişkin e-posta doğrulamasıyla oluşturulur. Android lansman listesinden ayrıdır.')}</p><CompletionForm challengeSlug={challenge.slug} verificationEnabled={verificationEnabled}/></section></>}
+    {completed&&<><AppBridge slug={challenge.slug} completion/><ChallengeShareActions slug={challenge.slug} title={challenge.title}/><section className="detail-complete"><h2>{t('Claim a star (optional)','Yıldızınızı alın (isteğe bağlı)')}</h2><p>{t('Only an adult email verification creates a permanent web star. This is separate from the Android launch list.','Kalıcı web yıldızı yalnızca yetişkin e-posta doğrulamasıyla oluşturulur. Android lansman listesinden ayrıdır.')}</p><CompletionForm challengeSlug={challenge.slug} verificationEnabled={verificationEnabled}/></section></>}
     <p><Link className="text-link" href={localizedPath('/#challenges',language)}>← {t('Return to the challenges','Görevlere dön')}</Link></p>
   </main>;
 }

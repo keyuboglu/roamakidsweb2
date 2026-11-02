@@ -29,23 +29,28 @@ describe('canonical site origin',()=>{
     expect(robotRules.rules).toMatchObject({allow:'/',disallow:expect.arrayContaining(['/api/','/admin/','/verify-email/'])});
     const entries=await sitemap();
     expect(entries.map(entry=>entry.url)).toEqual([
-      PRODUCTION_SITE_URL,
-      `${PRODUCTION_SITE_URL}/stars`,
-      `${PRODUCTION_SITE_URL}/privacy`,
-      `${PRODUCTION_SITE_URL}/challenge/shadow-signal`,
-      `${PRODUCTION_SITE_URL}/challenge/micro-world-safari`,
-      `${PRODUCTION_SITE_URL}/challenge/gravity-defier`,
+      `${PRODUCTION_SITE_URL}/?lang=en`,
+      `${PRODUCTION_SITE_URL}/stars?lang=en`,
+      `${PRODUCTION_SITE_URL}/privacy?lang=en`,
+      `${PRODUCTION_SITE_URL}/challenge/shadow-signal?lang=en`,
+      `${PRODUCTION_SITE_URL}/challenge/micro-world-safari?lang=en`,
+      `${PRODUCTION_SITE_URL}/challenge/gravity-defier?lang=en`,
     ]);
     expect(entries.filter(entry=>entry.lastModified).map(entry=>({
       url:entry.url,
       lastModified:entry.lastModified instanceof Date?entry.lastModified.toISOString():entry.lastModified,
     }))).toEqual([
-      {url:PRODUCTION_SITE_URL,lastModified:'2026-10-29T00:00:00.000Z'},
-      {url:`${PRODUCTION_SITE_URL}/privacy`,lastModified:'2026-10-29T00:00:00.000Z'},
-      {url:`${PRODUCTION_SITE_URL}/challenge/shadow-signal`,lastModified:'2026-10-29T00:00:00.000Z'},
-      {url:`${PRODUCTION_SITE_URL}/challenge/micro-world-safari`,lastModified:'2026-10-29T00:00:00.000Z'},
-      {url:`${PRODUCTION_SITE_URL}/challenge/gravity-defier`,lastModified:'2026-10-29T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/?lang=en`,lastModified:'2026-10-29T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/privacy?lang=en`,lastModified:'2026-10-29T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/challenge/shadow-signal?lang=en`,lastModified:'2026-10-29T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/challenge/micro-world-safari?lang=en`,lastModified:'2026-10-29T00:00:00.000Z'},
+      {url:`${PRODUCTION_SITE_URL}/challenge/gravity-defier?lang=en`,lastModified:'2026-10-29T00:00:00.000Z'},
     ]);
+    expect(entries[0].alternates).toEqual({languages:{
+      en:`${PRODUCTION_SITE_URL}/?lang=en`,
+      tr:`${PRODUCTION_SITE_URL}/?lang=tr`,
+      'x-default':`${PRODUCTION_SITE_URL}/?lang=en`,
+    }});
   });
 
   it('escapes script-closing content in structured data',()=>{

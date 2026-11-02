@@ -1,5 +1,5 @@
 import {describe,expect,it} from 'vitest';
-import {campaignChallenges,challengeArtwork,challengeArtworkBySlug,mergeCampaignChallenges} from '@/lib/challenge-content';
+import {campaignChallenges,challengeArtwork,challengeArtworkBySlug,challengeDisplayArtwork,mergeCampaignChallenges} from '@/lib/challenge-content';
 
 describe('campaign challenges',()=>{
   it('defines the three supplied challenges with their exact local artwork paths',()=>{
@@ -35,6 +35,8 @@ describe('campaign challenges',()=>{
 
   it('uses a known challenge image over any stored fallback and preserves unknown challenge art',()=>{
     expect(challengeArtwork('gravity-defier','/custom.png')).toBe('/images/challenges/gravity-defier.png');
+    expect(challengeDisplayArtwork('gravity-defier','/custom.png')).toBe('/images/challenges/gravity-defier.webp');
+    expect(challengeDisplayArtwork('other-challenge','/custom.png')).toBe('/custom.png');
     expect(challengeArtwork('other-challenge','/custom.png')).toBe('/custom.png');
     expect(challengeArtwork('other-challenge')).toBeNull();
   });
