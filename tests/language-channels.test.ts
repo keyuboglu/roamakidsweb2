@@ -69,6 +69,18 @@ describe('separate public language channels',()=>{
     expect(verify).not.toContain('ADULT EMAIL CONFIRMATION');
   });
 
+  it('links both language channels to live teacher and family resources instead of missing PDFs',()=>{
+    for(const language of ['en','tr'] as const){
+      const markup=render(language,createElement(Quest));
+      expect(markup).toContain('href="https://roama.tech/educators?utm_source=signalquest"');
+      expect(markup).toContain('href="https://roama.tech/explorer-kit?utm_source=signalquest"');
+      expect(markup).not.toContain('/teacher-pack.pdf');
+      expect(markup).not.toContain('/packs/2026-11.pdf');
+      expect(markup).toContain(language==='tr'?'Öğretmenler için: Büyük İşaret sınıf paketi':'For teachers: The Great Signal class pack');
+      expect(markup).toContain(language==='tr'?'Aileler için: Keşif Kiti':'For families: Explorer Kit');
+    }
+  });
+
   it('reveals only the real verified count at the first-light boundary',()=>{
     for(const count of [0,99,100]){
       const markup=render('en',createElement(Quest,{initialData:{configured:true,count,goal:1000000,challenges:[...campaignChallenges]}}));

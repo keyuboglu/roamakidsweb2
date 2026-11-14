@@ -179,9 +179,9 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
         <p>{t('Three practical, grown-up-led activities for ages 6–12, designed for families, classrooms and clubs. Choose a challenge, use everyday materials and explore together.','Aileler, sınıflar ve kulüpler için tasarlanmış, 6–12 yaşa yönelik üç uygulamalı ve yetişkin eşliğinde etkinlik. Bir görev seçin, günlük malzemeleri kullanın ve birlikte keşfedin.')}</p>
         <p>{t('No student account, name, email or other student data is requested or needed.','Öğrenci hesabı, adı, e-postası veya başka bir öğrenci verisi istenmez ya da gerekmez.')}</p>
       </div>
-      <nav className="teacher-pack-links" aria-label={t('Teacher resources','Öğretmen kaynakları')}>
-        <a href="/teacher-pack.pdf" target="_blank" rel="noreferrer">{t('Download the teacher pack (PDF)','Öğretmen paketini indir (PDF)')} ↗</a>
-        <a href="/packs/2026-11.pdf" target="_blank" rel="noreferrer">{t('Download the November 2026 activity pack (PDF)','Kasım 2026 etkinlik paketini indir (PDF)')} ↗</a>
+      <nav className="teacher-pack-links" aria-label={t('Teacher and family resources','Öğretmen ve aile kaynakları')}>
+        <a href="https://roama.tech/educators?utm_source=signalquest" target="_blank" rel="noreferrer">{t('For teachers: The Great Signal class pack','Öğretmenler için: Büyük İşaret sınıf paketi')} ↗</a>
+        <a href="https://roama.tech/explorer-kit?utm_source=signalquest" target="_blank" rel="noreferrer">{t('For families: Explorer Kit','Aileler için: Keşif Kiti')} ↗</a>
       </nav>
     </section>
     <section className="home-app-section" id="get-app" aria-labelledby="get-app-heading">
