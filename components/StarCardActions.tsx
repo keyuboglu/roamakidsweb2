@@ -35,8 +35,8 @@ function svgMarkup(starNumber:number,starName:string|null,publicUrl:string,langu
   return `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">
   <defs><radialGradient id="sky"><stop stop-color="#172844"/><stop offset="1" stop-color="#09111f"/></radialGradient><radialGradient id="glow"><stop stop-color="#f5d994" stop-opacity=".42"/><stop offset="1" stop-color="#f5d994" stop-opacity="0"/></radialGradient></defs>
   <rect width="${WIDTH}" height="${HEIGHT}" rx="28" fill="url(#sky)"/><circle cx="600" cy="250" r="220" fill="url(#glow)"/>${twinkles}
-  <text x="600" y="69" text-anchor="middle" fill="#f5f0e6" font-family="Arial,sans-serif" font-size="16" letter-spacing="5">${tr?'ROAMA SİNYAL MACERASI':'ROAMA SIGNAL QUEST'}</text>
-  <text x="600" y="98" text-anchor="middle" fill="#b6c2d3" font-family="Arial,sans-serif" font-size="12" letter-spacing="4">${tr?'BÜYÜK SİNYAL MACERASI':'THE GREAT SIGNAL QUEST'}</text>
+  <text x="600" y="69" text-anchor="middle" fill="#f5f0e6" font-family="Arial,sans-serif" font-size="16" letter-spacing="5">${tr?'ROAMA Kids · Sinyal Görevi':'ROAMA Kids · Signal Quest'}</text>
+  <text x="600" y="98" text-anchor="middle" fill="#b6c2d3" font-family="Arial,sans-serif" font-size="12" letter-spacing="4">${tr?'Büyük İşaret':'The Great Signal'}</text>
   <path d="m600 115 24 72 75 2-59 47 21 72-61-42-61 42 21-72-59-47 75-2z" fill="#e7c374"/>
   <text x="600" y="398" text-anchor="middle" fill="#e7c374" font-family="Arial,sans-serif" font-size="23" letter-spacing="5">${tr?'YILDIZ':'STAR'} #${number}</text>
   <text x="600" y="463" text-anchor="middle" fill="#f5f0e6" font-family="Georgia,serif" font-size="${nameSize}">${title}</text>
@@ -108,7 +108,7 @@ export default function StarCardActions({starNumber,starName,onStatus,attributio
     setBusy(true);
     try {
       const file=await imageFile(starNumber,starName,language);
-      const payload={title:tr?`ROAMA Sinyal Macerası yıldızım #${starNumber}`:`My ROAMA Signal Quest star #${starNumber}`,text:t('One world. One million places to shine.','Tek dünya. Parlamak için bir milyon yer.'),url:`${window.location.origin}${appendAttribution(localizedPath(`/stars?star=${starNumber}`,language),{...currentAttribution(),...attribution})}`};
+      const payload={title:tr?`ROAMA Kids · Sinyal Görevi yıldızım #${starNumber}`:`My ROAMA Kids · Signal Quest star #${starNumber}`,text:t('One world. One million places to shine.','Tek dünya. Parlamak için bir milyon yer.'),url:`${window.location.origin}${appendAttribution(localizedPath(`/stars?star=${starNumber}`,language),{...currentAttribution(),...attribution})}`};
       const shared=await shareFileOrLink(file,payload,navigator.share.bind(navigator),navigator.canShare?.bind(navigator));
       if(shared==='file'){
         track('star_card_shared',attribution,'card_file');

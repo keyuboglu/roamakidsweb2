@@ -7,6 +7,7 @@ import StarCardActions from '@/components/StarCardActions';
 import {OFFICIAL_SITE_URL} from '@/lib/brand';
 import {useLanguage} from '@/components/FunnelPreferences';
 import {localizedPath} from '@/lib/funnel';
+import {GREAT_SIGNAL_LAYER,isGreatSignalDate} from '@/lib/great-signal';
 import {
   STAR_CAPACITY,STAR_COLUMNS,STAR_ROWS,STAR_SPACING,STAR_WORLD_SIZE,
   STAR_TILE_COUNT,STAR_TILE_SIZE,buildStarPixels,isStarNumber,shouldRevealStarCount,starPosition,starTile,
@@ -59,13 +60,16 @@ export default function StarMap() {
   const [shareStatus,setShareStatus]=useState('');
   const [tileSnapshot,setTileSnapshot]=useState<Map<string,TileEntry>>(()=>new Map());
   const [retry,setRetry]=useState(0);
+  const [eventOnly,setEventOnly]=useState(false);
+  const [eventActive,setEventActive]=useState(false);
   const scale=scaleFor(size,camera);
 
   useEffect(()=>{
     const controller=new AbortController();
     const load=async()=>{
       try {
-        const data=await readJSON<StarOverview>('/api/stars',controller.signal);
+        const data=await readJSON<StarOverview>(`/api/stars${eventOnly?'?layer=great-signal-2026':''}`,controller.signal);
+        setEventActive(isGreatSignalDate(new Date()));
         setOverview(data);
         setError('');
       } catch(error) {
@@ -76,7 +80,7 @@ export default function StarMap() {
     void load();
     const timer=window.setInterval(()=>void load(),30000);
     return ()=>{controller.abort();clearInterval(timer);};
-  },[retry]);
+  },[retry,eventOnly]);
 
   useEffect(()=>{
     if(!container.current)return;
@@ -135,7 +139,7 @@ export default function StarMap() {
               return;
             }
             const [tileX,tileY]=key.split(':');
-            const data=await readJSON<{stars:PublicStar[]}>(`/api/stars?tileX=${tileX}&tileY=${tileY}`,controller.signal);
+            const data=await readJSON<{stars:PublicStar[]}>(`/api/stars?tileX=${tileX}&tileY=${tileY}${eventOnly?'&layer=great-signal-2026':''}`,controller.signal);
             tiles.current.delete(key);
             tiles.current.set(key,{stars:data.stars,loadedAt:Date.now()});
             while(tiles.current.size>MAX_CACHED_TILES){
@@ -155,7 +159,7 @@ export default function StarMap() {
     };
     void load();
     return ()=>controller.abort();
-  },[tileKeys,retry,overview]);
+  },[tileKeys,retry,overview,eventOnly]);
 
   useEffect(()=>{
     const element=canvas.current;
@@ -210,10 +214,16 @@ export default function StarMap() {
         const y=top+(tile.tileY+0.5)*STAR_TILE_SIZE*STAR_SPACING*scale;
         const radius=Math.max(3,Math.min(16,Math.sqrt(tile.count)*0.8));
         const glow=context.createRadialGradient(x,y,0,x,y,radius);
-        glow.addColorStop(0,'rgba(231,195,116,0.8)');
+        glow.addColorStop(0,eventOnly?'rgba(110,231,255,0.9)':'rgba(231,195,116,0.8)');
         glow.addColorStop(1,'rgba(231,195,116,0)');
         context.fillStyle=glow;
         context.fillRect(x-radius,y-radius,radius*2,radius*2);
+      }
+      if(!eventOnly)for(const tile of overview.greatSignal?.tiles||[]){
+        const x=left+(tile.tileX+0.5)*STAR_TILE_SIZE*STAR_SPACING*scale;
+        const y=top+(tile.tileY+0.5)*STAR_TILE_SIZE*STAR_SPACING*scale;
+        context.fillStyle='#6ee7ff';
+        context.beginPath();context.arc(x,y,Math.max(3,Math.min(16,Math.sqrt(tile.count)*0.8)),0,Math.PI*2);context.fill();
       }
     }
     const lit=new Map<number,PublicStar>();
@@ -223,6 +233,7 @@ export default function StarMap() {
     }
     context.fillStyle='#ffe3a0';
     for(const star of lit.values()){
+      context.fillStyle=star.greatSignal?'#6ee7ff':'#ffe3a0';
       const position=starPosition(star.starNumber);
       const x=left+position.x*scale,y=top+position.y*scale;
       if(x<0||x>size.width||y<0||y>size.height)continue;
@@ -244,7 +255,7 @@ export default function StarMap() {
       context.arc(x,y,Math.max(10,scale*2),0,Math.PI*2);
       context.stroke();
     }
-  },[camera,size,scale,overview,selected,tileSnapshot,tileKeys]);
+  },[camera,size,scale,overview,selected,tileSnapshot,tileKeys,eventOnly]);
 
   const zoomAt=useCallback((factor:number,x?:number,y?:number)=>{
     setCamera(current=>{
@@ -287,7 +298,16 @@ export default function StarMap() {
 
   return <main className="star-page">
     <header className="star-header"><Brand href={localizedPath('/',language)}/><nav><Link href={localizedPath('/#challenges',language)}>{t('The challenge','Görevler')}</Link><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">{t('Meet ROAMA Kids','ROAMA Kids ile tanışın')} ↗</a><Link className="nav-cta" href={localizedPath('/#get-app',language)}>{t('Get the app','Uygulamayı keşfet')} ↗</Link></nav></header>
-    <section className="star-intro"><div><p className="eyebrow">{t('ONE WORLD · ONE MILLION PLACES TO SHINE','TEK DÜNYA · PARLAMAK İÇİN BİR MİLYON YER')}</p><h1>{t('A sky we build','Gökyüzünü')} <em>{t('together.','birlikte kuruyoruz.')}</em></h1><p>{t('Every bright star is one successfully verified adult email claim. An adult may claim one permanent star; children do not need accounts.','Her parlak yıldız, başarıyla doğrulanmış bir yetişkin e-posta talebidir. Her yetişkin bir kalıcı yıldız alabilir; çocukların hesap açması gerekmez.')}</p></div><div className="star-total" aria-live="polite">{overview&&!shouldRevealStarCount(overview.count)?<p>{t('First light — help us light the first 100 stars','İlk ışık — ilk 100 yıldızı yakmamıza yardım edin')}</p>:overview?<><strong>{overview.count.toLocaleString(locale)}</strong><span> / {STAR_CAPACITY.toLocaleString(locale)} {t('stars lit','yıldız parlıyor')}</span></>:<p>{t('Verified stars are loading.','Doğrulanmış yıldızlar yükleniyor.')}</p>}</div></section>
+    <section className="star-intro"><div><p className="eyebrow">{t('ONE WORLD · ONE MILLION PLACES TO SHINE','TEK DÜNYA · PARLAMAK İÇİN BİR MİLYON YER')}</p><h1>{t('A sky we build','Gökyüzünü')} <em>{t('together.','birlikte kuruyoruz.')}</em></h1><p>{t('Every bright star is one successfully verified adult email claim. An adult may claim one permanent star; children do not need accounts.','Her parlak yıldız, başarıyla doğrulanmış bir yetişkin e-posta talebidir. Her yetişkin bir kalıcı yıldız alabilir; çocukların hesap açması gerekmez.')}</p></div><div className="star-total" aria-live="polite">{overview&&!shouldRevealStarCount(overview.count)?<p>{t('Help us light the first 100 stars','İlk 100 yıldızı yakmamıza yardım edin')}</p>:overview?<><strong>{overview.count.toLocaleString(locale)}</strong><span> / {STAR_CAPACITY.toLocaleString(locale)} {t('stars lit','yıldız parlıyor')}</span></>:<p>{t('Verified stars are loading.','Doğrulanmış yıldızlar yükleniyor.')}</p>}</div></section>
+    <section className="great-signal-layer" aria-labelledby="great-signal-layer-title">
+      <h2 id="great-signal-layer-title">{GREAT_SIGNAL_LAYER}</h2>
+      <p>{t('20–22 December 2026 · Europe/Istanbul. Verified Shadow Signal stars glow blue. Only totals and the number of countries are shown; no names or individual locations.','20–22 Aralık 2026 · İstanbul saati. Doğrulanan Gölge İşareti yıldızları mavi parlar. Yalnızca toplam ve ülke sayısı gösterilir; adlar veya kişisel konumlar gösterilmez.')}</p>
+      <label><input type="checkbox" checked={eventOnly} onChange={event=>{
+        tiles.current.clear();setTileSnapshot(new Map());setOverview(null);setSelected(null);setEventOnly(event.target.checked);
+      }}/> {t('Show The Great Signal 2026 layer only','Yalnız Büyük İşaret 2026 katmanını göster')}</label>
+      {overview?.greatSignal&&<p aria-live="polite">{shouldRevealStarCount(overview.count)?`${overview.greatSignal.total.toLocaleString(locale)} ${t('stars','yıldız')} · `:''}{overview.greatSignal.countries.toLocaleString(locale)} {t('countries','ülke')}</p>}
+      {eventActive&&<p><Link className="button button-gold" href={localizedPath('/challenge/shadow-signal',language)}>{t('Sent your shadow signal tonight? Add your star.','Bu gece gölge işaretinizi gönderdiniz mi? Yıldızınızı ekleyin.')}</Link></p>}
+    </section>
     <section className="star-explorer" aria-label={t('One million star explorer','Bir milyon yıldız gezgini')}>
       <div className="star-map-toolbar"><span><i className="lit-dot"/> {t('Verified adult stars','Doğrulanmış yetişkin yıldızları')} <i className="dim-dot"/> {t('Awaiting a claim','Sahibini bekliyor')}</span><div><button aria-label={t('Zoom out','Uzaklaştır')} onClick={()=>zoomAt(0.5)}>−</button><output aria-label={t('Zoom level','Yakınlaştırma düzeyi')}>{camera.zoom.toFixed(camera.zoom<10?1:0)}×</output><button aria-label={t('Zoom in','Yakınlaştır')} onClick={()=>zoomAt(2)}>+</button><button onClick={()=>{setCamera(centered);setSelected(null);const url=new URL(location.href);url.searchParams.delete('star');window.history.replaceState(null,'',url);}}>{t('View all','Tümünü gör')}</button></div></div>
       <div className="star-canvas-wrap" ref={container}>
@@ -323,7 +343,7 @@ export default function StarMap() {
       <div className="star-map-bottom"><form onSubmit={event=>{event.preventDefault();locate(Number(find));}}><label htmlFor="find-star">{t('Find a star','Bir yıldız bul')}</label><input id="find-star" type="number" min="1" max={STAR_CAPACITY} placeholder={t('Star number','Yıldız numarası')} value={find} onChange={event=>setFind(event.target.value)} required/><button className="button button-gold">{t('Find','Bul')} ↗</button></form><p>{t('1,000 columns × 1,000 rows. Every star has its own permanent number.','1.000 sütun × 1.000 satır. Her yıldızın kendine ait kalıcı bir numarası vardır.')}</p></div>
       {(error||regionError)&&<div className="star-map-error" role="alert"><p>{tr?(regionError==='Enter a star number from 1 to 1,000,000.'?'1 ile 1.000.000 arasında bir yıldız numarası girin.':'Yıldız haritasına bağlanılamadı. Lütfen tekrar deneyin.'):error||regionError}</p><button className="share-button" onClick={()=>setRetry(value=>value+1)}>{t('Try again','Tekrar dene')}</button></div>}
     </section>
-    {selected&&<section className="selected-star" aria-live="polite"><span className="selected-star-icon" aria-hidden="true">✦</span><div><p className="eyebrow">{t('STAR','YILDIZ')} #{selected.toLocaleString(locale)}</p><h2>{selectedStar?selectedStar.starName||t('A discovery without a name','İsimsiz bir keşif'):selectedEntry?t('Your next discovery could shine here.','Bir sonraki keşfiniz burada parlayabilir.'):t('Connecting to this part of the sky…','Gökyüzünün bu bölümüne bağlanılıyor…')}</h2><p>{selectedStar?t('One permanent star in the ROAMA Signal Quest.','ROAMA Sinyal Macerası’nda kalıcı bir yıldız.'):selectedEntry?t('This star has not been claimed.','Bu yıldız henüz alınmadı.'):t('Names load only for the part of the sky you explore.','Adlar yalnızca keşfettiğiniz gökyüzü bölümü için yüklenir.')}</p></div>{selectedStar?<StarCardActions starNumber={selected} starName={selectedStar.starName} onStatus={setShareStatus}/>:<Link className="button button-gold" href={localizedPath('/#challenges',language)}>{t('Choose a challenge','Bir görev seç')} ↗</Link>}
+    {selected&&<section className="selected-star" aria-live="polite"><span className="selected-star-icon" aria-hidden="true">✦</span><div><p className="eyebrow">{t('STAR','YILDIZ')} #{selected.toLocaleString(locale)}</p><h2>{selectedStar?selectedStar.starName||t('A discovery without a name','İsimsiz bir keşif'):selectedEntry?t('Your next discovery could shine here.','Bir sonraki keşfiniz burada parlayabilir.'):t('Connecting to this part of the sky…','Gökyüzünün bu bölümüne bağlanılıyor…')}</h2><p>{selectedStar?t('One permanent star in the ROAMA Kids · Signal Quest.','ROAMA Kids · Sinyal Görevi’nda kalıcı bir yıldız.'):selectedEntry?t('This star has not been claimed.','Bu yıldız henüz alınmadı.'):t('Names load only for the part of the sky you explore.','Adlar yalnızca keşfettiğiniz gökyüzü bölümü için yüklenir.')}</p></div>{selectedStar?<StarCardActions starNumber={selected} starName={selectedStar.starName} onStatus={setShareStatus}/>:<Link className="button button-gold" href={localizedPath('/#challenges',language)}>{t('Choose a challenge','Bir görev seç')} ↗</Link>}
       {selectedStar&&<button className="share-button" onClick={async()=>{
       try {await navigator.clipboard.writeText(`${window.location.origin}${localizedPath(`/stars?star=${selected}`,language)}`);setShareStatus(t('Star link copied.','Yıldız bağlantısı kopyalandı.'));}
       catch(error){console.warn('Star link could not be copied.',error);setRegionError('Copy the star link from your browser address bar.');}

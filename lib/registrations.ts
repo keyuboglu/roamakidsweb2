@@ -6,7 +6,7 @@ import {sanitizeAttribution,type Attribution} from '@/lib/attribution';
 
 class ConstellationFullError extends Error {}
 
-type ClaimInput={challengeId:string;idempotencyKey:string;abuseKey:string;adultEmailHash:string;starName?:string|null;attribution?:Attribution};
+type ClaimInput={challengeId:string;idempotencyKey:string;abuseKey:string;adultEmailHash:string;starName?:string|null;attribution?:Attribution;countryCode?:string|null};
 type Transaction=Prisma.TransactionClient;
 
 function tokenAttribution(token:{source:string|null;medium:string|null;campaign:string|null;content:string|null;referralCode:string|null}) {
@@ -32,6 +32,7 @@ async function createStar(tx:Transaction,input:ClaimInput) {
       abuseKey:input.abuseKey,
       adultEmailHash:input.adultEmailHash,
       emailVerifiedAt:new Date(),
+      countryCode:input.countryCode||null,
       starNumber:starsIssued,
       starName:input.starName||null,
     },
@@ -84,7 +85,7 @@ export async function registerVerifiedCompletion(input:{slug:string;idempotencyK
   }
 }
 
-export async function redeemEmailVerificationToken(tokenHash:string,abuseKey:string) {
+export async function redeemEmailVerificationToken(tokenHash:string,abuseKey:string,countryCode:string|null=null) {
   if(!/^[a-f0-9]{64}$/i.test(tokenHash))return {ok:false as const,reason:'invalid' as const};
   const now=new Date();
   try {
@@ -123,6 +124,7 @@ export async function redeemEmailVerificationToken(tokenHash:string,abuseKey:str
         challengeId:token.challengeId,
         idempotencyKey:randomUUID(),
         abuseKey,
+        countryCode,
         adultEmailHash:token.adultEmailHash,
         starName:token.starName,
         attribution:tokenAttribution(token),

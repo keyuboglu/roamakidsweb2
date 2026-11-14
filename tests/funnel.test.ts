@@ -22,11 +22,11 @@ describe('device and language funnel selection',()=>{
   });
 
   it('honors explicit languages, Turkish browsers and English fallback',()=>{
-    expect(detectLanguage('?lang=tr','en-US')).toBe('tr');
-    expect(detectLanguage('','tr-TR')).toBe('tr');
-    expect(detectLanguage('?lang=en','tr-TR')).toBe('en');
-    expect(detectLanguage('?lang=fr','fr-FR')).toBe('en');
-    expect(detectLanguage('','de-DE')).toBe('en');
+    expect(detectLanguage('?lang=tr')).toBe('tr');
+    expect(detectLanguage('')).toBe('en');
+    expect(detectLanguage('?lang=en')).toBe('en');
+    expect(detectLanguage('?lang=fr')).toBe('en');
+    expect(detectLanguage('')).toBe('en');
     expect(localizedPath('/challenge/shadow-signal?utm_source=tiktok#steps','tr')).toBe('/challenge/shadow-signal?utm_source=tiktok&lang=tr#steps');
     expect(localizedPath('/#challenges','tr')).toBe('/?lang=tr#challenges');
     expect(localizedPath('/#challenges','en')).toBe('/?lang=en#challenges');
@@ -86,6 +86,6 @@ describe('private Android email storage',()=>{
     await sendVerificationEmail('adult@example.test',token,'en');
     const english=JSON.parse(fetchMock.mock.calls[1][1].body);
     expect(english.text).toContain(`/verify-email?lang=en#${token}`);
-    expect(english.subject).toBe('Verify your ROAMA Signal Quest star');
+    expect(english.subject).toBe('Verify your ROAMA Kids · Signal Quest star');
   });
 });

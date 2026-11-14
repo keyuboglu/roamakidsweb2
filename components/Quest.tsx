@@ -13,6 +13,7 @@ import {FAMILY_CHALLENGE_MESSAGE,localizedPath} from '@/lib/funnel';
 import {turkishChallenges} from '@/lib/challenge-translations';
 import {challengeDisplayArtwork} from '@/lib/challenge-content';
 import {shouldRevealStarCount} from '@/lib/stars';
+import GreatSignalInvitation from '@/components/GreatSignalInvitation';
 
 type Challenge={slug:string;title:string;shortDescription:string;instructions?:string;duration?:string|null;safety?:string;imageUrl?:string|null};
 export type Campaign={configured:boolean;count:number|null;goal:number;title?:string;headline?:string;description?:string;milestones?:({threshold:number;label:string}|number)[];challenges:Challenge[];iosStoreUrl?:string|null;androidStoreUrl?:string|null;error?:string};
@@ -56,7 +57,7 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
   const headline=tr?'BİR MİLYON YILDIZ. TEK BÜYÜK MACERA.':data.headline||'A MILLION STARS. ONE GLOBAL QUEST.';
   const headlineSentences=headline.match(/^(.+?[.!?])\s+(.+)$/);
   const challengePresentation:Record<string,{title:string;defaultTitle:string;description:string;defaultDescription:string;alt:string;accent:string}>={
-    'shadow-signal':{title:'SHADOW SIGNAL',defaultTitle:'The Shadow Signal',description:'Discover the magic of light and shadows.',defaultDescription:'Can you make something ordinary look impossible?',alt:'A child uses a small light to cast a playful creature-shaped shadow on a wall.',accent:'violet'},
+    'shadow-signal':{title:'Shadow Signal',defaultTitle:'Shadow Signal',description:'With a grown-up: make a hand shadow, then listen to the night for one minute.',defaultDescription:'Make a shadow signal with your hands, then listen to the night with a grown-up.',alt:'Original Shadow Signal challenge artwork.',accent:'violet'},
     'micro-world-safari':{title:'MICRO-WORLD SAFARI',defaultTitle:'The Micro-World Safari',description:'Explore the tiny wonders around you.',defaultDescription:'What if you looked a little closer?',alt:'A child looks through a magnifying glass at the detailed veins of a green leaf.',accent:'green'},
     'gravity-defier':{title:'GRAVITY DEFIER',defaultTitle:'The Gravity Defier',description:'Experiment, discover, and challenge gravity.',defaultDescription:'Can you balance three objects in a way that looks impossible?',alt:'A child carefully balances light household objects in a surprising stack.',accent:'blue'},
   };
@@ -94,6 +95,7 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
         <a href="#challenges">{t('Challenges','Görevler')}</a>
         <a href="#how">{t('How It Works','Nasıl Çalışır')}</a>
         <a href="#parents">{t('For Parents','Ebeveynler İçin')}</a>
+        <a href={OFFICIAL_SITE_URL}>roama.tech ↗</a>
       </nav>
       <div className="topbar-actions">
         <AppDownloadCTA compact/>
@@ -102,7 +104,7 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
     </header>
     <section className="hero" id="top">
       <div className="hero-copy">
-        <p className="eyebrow"><span className="eyebrow-dot"/> {tr?'ROAMA KIDS SUNAR · BÜYÜK SİNYAL MACERASI':`ROAMA KIDS PRESENTS · ${(data.title||'THE GREAT SIGNAL QUEST').toUpperCase()}`}</p>
+        <p className="eyebrow"><span className="eyebrow-dot"/> {tr?'ROAMA Kids · Sinyal Görevi':'ROAMA Kids · Signal Quest'}</p>
         <h1>{headlineSentences?<>{headlineSentences[1]}<br/><em>{headlineSentences[2]}</em></>:headline}</h1>
         <p className="hero-lede">{tr?'6–12 yaş çocuklar için üç ücretsiz, ekransız aile görevi. Uygulama, fotoğraf veya kayıt gerekmez.':FAMILY_CHALLENGE_MESSAGE}</p>
         {data.description&&data.description!==FAMILY_CHALLENGE_MESSAGE&&<p className="hero-context">{tr?'Gerçek dünyayı keşfedin, bir görev tamamlayın ve ROAMA Kids evreninde yıldızınızı alın.':data.description}</p>}
@@ -154,11 +156,12 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
       </div>
       <p className="journey-disclaimer">{t('A visual story—not a live reward or activity tracker.','Bu görsel bir hikâyedir; canlı ödül veya etkinlik takip sistemi değildir.')}</p>
     </section>
+    <GreatSignalInvitation/>
     <section className="counter-section" aria-labelledby="counter-title">
       <div className="counter-intro"><p className="eyebrow">{t('OUR SHARED JOURNEY','ORTAK YOLCULUĞUMUZ')}</p><h2 id="counter-title">{t('Every discovery','Her keşif')}<br/>{t('leaves a little light.','küçük bir ışık bırakır.')}</h2><p>{t('Only completed challenges with a verified adult organizer email are counted as permanent stars.','Yalnızca yetişkin düzenleyicinin e-postası doğrulanan tamamlanmış görevler kalıcı yıldız olarak sayılır.')}</p><Link className="counter-map-link" href={localizedPath('/stars',language)}>{t('See the million-star sky','Bir milyon yıldızlık gökyüzünü gör')} ↗</Link></div>
       <div className="counter-card"><div className="counter-head"><span>{t('VERIFIED ADULT STAR CLAIMS','DOĞRULANMIŞ YETİŞKİN YILDIZ TALEPLERİ')}</span><span className="live"><i/> {status==='loading'?t('UPDATING','GÜNCELLENİYOR'):t('LIVE COUNT','CANLI SAYI')}</span></div>
         {firstLight
-          ?<p className="first-light-copy" aria-live="polite">{t('First light — help us light the first 100 stars','İlk ışık — ilk 100 yıldızı yakmamıza yardım edin')}</p>
+          ?<p className="first-light-copy" aria-live="polite">{t('Help us light the first 100 stars','İlk 100 yıldızı yakmamıza yardım edin')}</p>
           :count!==null
             ?<><div className="count-line" aria-live="polite" aria-atomic="true"><strong>{count.toLocaleString(locale)}</strong><span>/ {data.goal.toLocaleString(locale)} {t('stars','yıldız')}</span></div><div className="progress-track" role="progressbar" aria-label={t('Verified adult-email star claims toward the campaign target','Kampanya hedefine doğru doğrulanmış yetişkin yıldız talepleri')} aria-valuemin={0} aria-valuemax={data.goal} aria-valuenow={Math.min(count,data.goal)}><span style={{width:`${progress}%`}}/></div><div className="progress-label"><span>{tr?`HEDEFİMİZİN %${progress.toLocaleString(locale,{minimumFractionDigits:progress<1?2:1,maximumFractionDigits:progress<1?2:1})}`:`${progress.toFixed(progress<1?2:1)}% OF OUR GOAL`}</span><span>{data.goal.toLocaleString(locale)}</span></div></>
             :<p className="count-unavailable" role="status">{status==='loading'?t('Checking verified stars…','Doğrulanmış yıldızlar kontrol ediliyor…'):t('Verified star count temporarily unavailable','Doğrulanmış yıldız sayısı şu anda alınamıyor')}</p>}
@@ -167,7 +170,7 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
     </section>
     <section className="parent-section" id="parents" aria-labelledby="parents-heading">
       <div className="parent-visual"><Image src="/roama-logo.webp" alt={t('Official ROAMA Kids fox logo','Resmî ROAMA Kids tilki logosu')} width={192} height={192} unoptimized/><span className="parent-visual-star" aria-hidden="true">✦</span><span className="parent-visual-caption">{t('CURIOUS TOGETHER','BİRLİKTE MERAK EDİN')}</span></div>
-      <div className="parent-copy"><p className="eyebrow">{t('A NOTE FOR GROWN-UPS','YETİŞKİNLERE BİR NOT')}</p><h2 id="parents-heading">{t('ADVENTURES TO','BİRLİKTE')}<br/><em>{t('EXPLORE TOGETHER','KEŞFEDİLECEK MACERALAR')}</em></h2><p>{t('ROAMA Signal Quest encourages children ages 6–12 to explore the world around them through simple, real-world activities.','ROAMA Sinyal Macerası, 6–12 yaş çocukları basit gerçek dünya etkinlikleriyle çevrelerini keşfetmeye teşvik eder.')}</p><ul>{(tr?['Günlük malzemeler ve erişilebilir etkinlikler.','Görevler boyunca yetişkin desteği ve gözetimi.','Merak, yaratıcılık ve keşif.','Uygulama maceraları ile gerçek dünya keşfi arasında özenli bir denge.']:['Everyday materials and accessible activities.','Adult support and supervision during challenges.','Curiosity, creativity, and discovery.','A thoughtful balance between app adventures and real-world exploration.']).map(item=><li key={item}>{item}</li>)}</ul><div className="parent-actions"><a className="button button-gold" href="#get-app">{tr?'ROAMA Kids uygulamasını keşfet':'DISCOVER THE ROAMA KIDS APP'} ↗</a><Link className="text-link" href={localizedPath('/privacy',language)}>{t('Privacy information','Gizlilik bilgileri')} <span>→</span></Link></div><p className="bridge-foot">{t('No app download, photo, video or public post is needed to join a challenge.','Bir göreve katılmak için uygulama indirmek, fotoğraf, video veya herkese açık paylaşım gerekmez.')}</p></div>
+      <div className="parent-copy"><p className="eyebrow">{t('A NOTE FOR GROWN-UPS','YETİŞKİNLERE BİR NOT')}</p><h2 id="parents-heading">{t('ADVENTURES TO','BİRLİKTE')}<br/><em>{t('EXPLORE TOGETHER','KEŞFEDİLECEK MACERALAR')}</em></h2><p>{t('ROAMA Kids · Signal Quest encourages children ages 6–12 to explore the world around them through simple, real-world activities.','ROAMA Kids · Sinyal Görevi, 6–12 yaş çocukları basit gerçek dünya etkinlikleriyle çevrelerini keşfetmeye teşvik eder.')}</p><ul>{(tr?['Günlük malzemeler ve erişilebilir etkinlikler.','Görevler boyunca yetişkin desteği ve gözetimi.','Merak, yaratıcılık ve keşif.','Uygulama maceraları ile gerçek dünya keşfi arasında özenli bir denge.']:['Everyday materials and accessible activities.','Adult support and supervision during challenges.','Curiosity, creativity, and discovery.','A thoughtful balance between app adventures and real-world exploration.']).map(item=><li key={item}>{item}</li>)}</ul><div className="parent-actions"><a className="button button-gold" href="#get-app">{tr?'ROAMA Kids uygulamasını keşfet':'DISCOVER THE ROAMA KIDS APP'} ↗</a><Link className="text-link" href={localizedPath('/privacy',language)}>{t('Privacy information','Gizlilik bilgileri')} <span>→</span></Link></div><p className="bridge-foot">{t('No app download, photo, video or public post is needed to join a challenge.','Bir göreve katılmak için uygulama indirmek, fotoğraf, video veya herkese açık paylaşım gerekmez.')}</p></div>
     </section>
     <section className="teacher-section" id="teachers" aria-labelledby="teachers-heading">
       <div>
@@ -194,8 +197,8 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
     </section>
     <section className="milestone-section"><div><p className="eyebrow">{t('A SKY WE BUILD TOGETHER','BİRLİKTE KURDUĞUMUZ GÖKYÜZÜ')}</p><h2>{t('Every star takes','Her yıldız bizi')}<br/>{t('us somewhere new.','yeni bir yere taşır.')}</h2><p className="milestone-copy">{t('A million is our destination. The milestones along the way will open new chapters of the quest.','Hedefimiz bir milyon. Yol boyunca ulaştığımız aşamalar maceranın yeni bölümlerini açacak.')}</p><Link className="text-link" href={localizedPath('/stars',language)}>{t('Find your place in the sky','Gökyüzündeki yerinizi bulun')} →</Link></div><div className="milestone-list">{(data.milestones?.length?data.milestones:[100,1000,10000,100000,1000000]).map((raw,index)=>{
       const milestone=typeof raw==='number'?{threshold:raw,label:index===4?'THE GREAT SIGNAL':'STARS'}:raw;
-      return <div className={`milestone ${count!==null&&count>=milestone.threshold?'reached':''}`} key={milestone.threshold}><span className="milestone-star">✦</span><span className="milestone-number">{milestone.threshold.toLocaleString(locale)}</span><span className="milestone-label">{tr?(milestone.threshold===1000000?'BÜYÜK SİNYAL':'YILDIZ'):milestone.label}</span><span className="milestone-status">{count!==null&&count>=milestone.threshold?t('REACHED','ULAŞILDI'):t('AHEAD','SIRADA')}</span></div>;
+      return <div className={`milestone ${count!==null&&count>=milestone.threshold?'reached':''}`} key={milestone.threshold}><span className="milestone-star">✦</span><span className="milestone-number">{milestone.threshold.toLocaleString(locale)}</span><span className="milestone-label">{milestone.threshold===1000000?t('The Great Signal','Büyük İşaret'):tr?'YILDIZ':milestone.label}</span><span className="milestone-status">{count!==null&&count>=milestone.threshold?t('REACHED','ULAŞILDI'):t('AHEAD','SIRADA')}</span></div>;
     })}</div></section>
-    <footer><Brand href={localizedPath('/',language)}/><span>{t('ROAMA SIGNAL QUEST · A MILLION STARS. ONE GLOBAL QUEST.','ROAMA SİNYAL MACERASI · BİR MİLYON YILDIZ. TEK BÜYÜK MACERA.')}</span><div><Link href={localizedPath('/stars',language)}>{t('Explore the star map','Yıldız haritasını keşfet')}</Link><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">roama.tech ↗</a><Link href={localizedPath('/privacy',language)}>{t('Privacy information','Gizlilik bilgileri')}</Link></div></footer>
+    <footer><Brand href={localizedPath('/',language)}/><span>{t('ROAMA Kids · Signal Quest','ROAMA Kids · Sinyal Görevi')}</span><div><Link href={localizedPath('/stars',language)}>{t('Explore the star map','Yıldız haritasını keşfet')}</Link><a href={OFFICIAL_SITE_URL} target="_blank" rel="noreferrer">roama.tech ↗</a><Link href={localizedPath('/privacy',language)}>{t('Privacy information','Gizlilik bilgileri')}</Link></div></footer>
   </main>;
 }

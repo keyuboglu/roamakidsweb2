@@ -3,10 +3,10 @@ export type Device='ios'|'android'|'desktop';
 
 export const FAMILY_CHALLENGE_MESSAGE='Three free, screen-free family challenges for kids ages 6–12. No app, photos or sign-up needed.';
 
-export function detectLanguage(search:string,browserLanguage:string):Language {
+export function detectLanguage(search:string):Language {
   const override=new URLSearchParams(search).get('lang');
   if(override==='tr'||override==='en')return override;
-  return browserLanguage.toLowerCase().startsWith('tr')?'tr':'en';
+  return 'en';
 }
 
 export function detectDevice(userAgent:string,maxTouchPoints=0):Device {

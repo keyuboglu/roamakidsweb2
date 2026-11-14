@@ -9,18 +9,18 @@ import {serverLanguage} from '@/lib/server-language';
 const englishMetadata: Metadata = {
   metadataBase: new URL(getCanonicalOrigin()),
   icons: {icon:{url:'/roama-icon.png',type:'image/png',sizes:'32x32'},apple:{url:'/roama-apple-icon.png',sizes:'180x180',type:'image/png'}},
-  title: 'ROAMA Signal Quest | Creative Challenges for Kids & Families',
+  title: 'ROAMA Kids · Signal Quest | Creative Challenges for Kids & Families',
   description: FAMILY_CHALLENGE_MESSAGE,
   openGraph: {
-    title: 'ROAMA Signal Quest | Creative Challenges for Kids & Families',
+    title: 'ROAMA Kids · Signal Quest | Creative Challenges for Kids & Families',
     description: FAMILY_CHALLENGE_MESSAGE,
     type: 'website',
-    siteName: 'ROAMA Signal Quest',
-    images: [{url:'/og-great-signal.png',width:1200,height:630,alt:'ROAMA Signal Quest — A million stars and three creative family challenges.'}],
+    siteName: 'ROAMA Kids · Signal Quest',
+    images: [{url:'/og-great-signal.png',width:1200,height:630,alt:'ROAMA Kids · Signal Quest — A million stars and three creative family challenges.'}],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'ROAMA Signal Quest | Creative Challenges for Kids & Families',
+    title: 'ROAMA Kids · Signal Quest | Creative Challenges for Kids & Families',
     description: FAMILY_CHALLENGE_MESSAGE,
     images: ['/og-great-signal.png'],
   },
@@ -29,11 +29,11 @@ const englishMetadata: Metadata = {
 export async function generateMetadata():Promise<Metadata> {
   const tr=await serverLanguage()==='tr';
   if(!tr)return englishMetadata;
-  const title='ROAMA Sinyal Macerası | Çocuklar ve Aileler İçin Yaratıcı Görevler';
+  const title='ROAMA Kids · Sinyal Görevi | Çocuklar ve Aileler İçin Yaratıcı Görevler';
   const description='6–12 yaş çocuklar için üç ücretsiz, ekransız aile görevi. Uygulama, fotoğraf veya kayıt gerekmez.';
   return {...englishMetadata,title,description,
-    openGraph:{title,description,type:'website',siteName:'ROAMA Sinyal Macerası',locale:'tr_TR',images:[{url:'/og-great-signal.png',width:1200,height:630,alt:'ROAMA Sinyal Macerası — bir milyon yıldız ve üç yaratıcı aile görevi.'}]},
-    twitter:{card:'summary_large_image',title,description,images:['/og-great-signal.png']}};
+    openGraph:{title,description,type:'website',siteName:'ROAMA Kids · Sinyal Görevi',locale:'tr_TR',images:[{url:'/og-great-signal-tr.png',width:1200,height:630,alt:'ROAMA Kids · Sinyal Görevi — bir milyon yıldız ve üç yaratıcı aile görevi.'}]},
+    twitter:{card:'summary_large_image',title,description,images:['/og-great-signal-tr.png']}};
 }
 
 export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

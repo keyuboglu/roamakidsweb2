@@ -38,14 +38,14 @@ describe('separate public language channels',()=>{
     const initialData={configured:true,count:2,goal:1000000,headline:'A MILLION STARS. ONE GLOBAL QUEST.',description:'English-only admin description',milestones:[{threshold:100,label:'First light'}],challenges:[...campaignChallenges]};
     const tr=render('tr',createElement(Quest,{initialData}));
     expect(tr).toContain('BİR MİLYON YILDIZ.');
-    expect(tr).toContain('İlk ışık — ilk 100 yıldızı yakmamıza yardım edin');
+    expect(tr).toContain('İlk 100 yıldızı yakmamıza yardım edin');
     expect(tr).not.toContain('class="count-line"');
     expect(tr).toContain('NASIL');
     expect(tr).toContain('Gizlilik bilgileri');
     for(const text of ['English-only admin description','First light','CHOOSE YOUR ADVENTURE','For Parents','Explore the star map','LIVE COUNT','Privacy information','How It Works'])expect(tr).not.toContain(text);
     const en=render('en',createElement(Quest,{initialData}));
     expect(en).toContain('CHOOSE YOUR ADVENTURE');
-    expect(en).toContain('First light — help us light the first 100 stars');
+    expect(en).toContain('Help us light the first 100 stars');
     expect(en).not.toContain('class="count-line"');
     expect(en).toContain('English-only admin description');
     for(const text of ['BİR MİLYON','Göreve başla','Gizlilik bilgileri','MACERANIZI SEÇİN'])expect(en).not.toContain(text);
@@ -56,7 +56,7 @@ describe('separate public language channels',()=>{
       const tr=render('tr',createElement(ChallengeDetail,{challenge,verificationEnabled:true}));
       expect(tr).toContain('Bilmeceyi yanınıza alın');
       expect(tr).toContain('Görev bağlantısını kopyala');
-      for(const text of ['The Great Signal Quest','Take the riddle with you','Share card','Completed this challenge?'])expect(tr).not.toContain(text);
+      for(const text of ['ROAMA Kids · Signal Quest','Take the riddle with you','Share card','Completed this challenge?'])expect(tr).not.toContain(text);
     }
     const map=render('tr',createElement(StarMap));
     expect(map).toContain('Bir yıldız bul');
@@ -65,6 +65,15 @@ describe('separate public language channels',()=>{
     const verify=render('tr',createElement(VerifyEmail));
     expect(verify).toContain('E-postamı doğrula');
     expect(verify).not.toContain('ADULT EMAIL CONFIRMATION');
+  });
+
+  it('reveals only the real verified count at the first-light boundary',()=>{
+    for(const count of [0,99,100]){
+      const markup=render('en',createElement(Quest,{initialData:{configured:true,count,goal:1000000,challenges:[...campaignChallenges]}}));
+      expect(markup.includes('class="count-line"')).toBe(count>=100);
+      expect(markup.includes('Help us light the first 100 stars')).toBe(count<100);
+      if(count===100)expect(markup).toContain('<strong>100</strong>');
+    }
   });
 
   it('offers top-level links with active-language semantics on the current page',()=>{
@@ -79,7 +88,7 @@ describe('separate public language channels',()=>{
     for(const [query,accept,expected] of [
       ['?lang=en','tr-TR,tr;q=0.9','en'],
       ['?lang=tr','en-US,en;q=0.9','tr'],
-      ['','tr-TR,tr;q=0.9','tr'],
+      ['','tr-TR,tr;q=0.9','en'],
       ['','fr-FR,fr;q=0.9','en'],
     ]){
       const response=middleware(new NextRequest(`https://signalquest.roama.tech/${query}`,{headers:{'accept-language':accept,'x-roama-language':expected==='tr'?'en':'tr'}}));

@@ -6,7 +6,7 @@ export const RIDDLE_CARD_FORMATS={
 } as const;
 
 export const RIDDLE_CARD_COPY:Record<string,{hook:string;supporting:string;hookInArtwork?:boolean}>={
-  'shadow-signal':{hook:'What could this be?',supporting:'Your home is full of signals.',hookInArtwork:true},
+  'shadow-signal':{hook:'Make your shadow signal.',supporting:'With a grown-up: shine a light on a wall, make a hand shadow, turn off the light and listen to the night for one minute.'},
   'micro-world-safari':{hook:'Can you guess what this tiny world belongs to?',supporting:'Look closer. Discover the extraordinary.'},
   'gravity-defier':{hook:"This shouldn't balance… but does it?",supporting:'Three safe objects. One surprising challenge.'},
 } as const;

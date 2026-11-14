@@ -25,7 +25,7 @@ export function useLanguage():Language {
   const pathname=usePathname();
   return useSyncExternalStore(subscribe,()=>{
     void pathname;
-    return detectLanguage(window.location.search,navigator.language);
+    return detectLanguage(window.location.search);
   },()=>initial);
 }
 

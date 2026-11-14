@@ -87,11 +87,11 @@ function renderCard(image:HTMLImageElement,format:RiddleCardFormat,copy:CardCopy
     context.fillStyle='#e7c374';
     context.font='700 18px Arial, sans-serif';
     context.letterSpacing='3px';
-    context.fillText(tr?'ROAMA SİNYAL MACERASI':'ROAMA SIGNAL QUEST',548,94,590);
+    context.fillText(tr?'ROAMA Kids · Sinyal Görevi':'ROAMA Kids · Signal Quest',548,94,590);
     context.fillStyle='#f5f0e6';
     context.font='17px Arial, sans-serif';
     context.letterSpacing='2px';
-    context.fillText(tr?'BÜYÜK SİNYAL MACERASI':'THE GREAT SIGNAL QUEST',548,126,590);
+    context.fillText(tr?'Büyük İşaret':'The Great Signal',548,126,590);
     context.letterSpacing='0px';
     drawCopy(context,copy,548,206,590,1);
     context.fillStyle='#e7c374';
@@ -105,11 +105,11 @@ function renderCard(image:HTMLImageElement,format:RiddleCardFormat,copy:CardCopy
     context.font='700 24px Arial, sans-serif';
     context.letterSpacing='4px';
     context.textAlign='center';
-    context.fillText(tr?'ROAMA SİNYAL MACERASI':'ROAMA SIGNAL QUEST',width/2,104,width-120);
+    context.fillText(tr?'ROAMA Kids · Sinyal Görevi':'ROAMA Kids · Signal Quest',width/2,104,width-120);
     context.fillStyle='#d5dce7';
     context.font='18px Arial, sans-serif';
     context.letterSpacing='3px';
-    context.fillText(tr?'BÜYÜK SİNYAL MACERASI':'THE GREAT SIGNAL QUEST',width/2,142,width-120);
+    context.fillText(tr?'Büyük İşaret':'The Great Signal',width/2,142,width-120);
     context.letterSpacing='0px';
     context.fillStyle='#101d34';
     context.fillRect(60,176,width-120,1030);
@@ -179,7 +179,7 @@ export default function RiddleCardActions({slug,imageUrl,copy:originalCopy}:Prop
   const tr=language==='tr';
   const t=(en:string,turkish:string)=>tr?turkish:en;
   const translations:Record<string,CardCopy>={
-    'shadow-signal':{hook:'Bu ne olabilir?',supporting:'Eviniz sinyallerle dolu.'},
+    'shadow-signal':{hook:'Gölge işaretinizi yapın.',supporting:'Bir yetişkinle duvara ışık tutun, ellerinizle gölge işareti yapın, ışığı kapatıp geceyi bir dakika dinleyin.'},
     'micro-world-safari':{hook:'Bu minik dünya neye ait olabilir?',supporting:'Yakından bakın. Olağanüstüyü keşfedin.'},
     'gravity-defier':{hook:'Bunun dengede durmaması gerekiyor… ama duruyor mu?',supporting:'Üç güvenli nesne. Şaşırtıcı bir görev.'},
   };
@@ -218,7 +218,7 @@ export default function RiddleCardActions({slug,imageUrl,copy:originalCopy}:Prop
       const url=invitationUrl();
       const blob=await createCard(imageUrl,'landscape',copy,slug,language);
       const file=new File([blob],`roama-${slug}-riddle-card-1200x630.png`,{type:'image/png'});
-      const payload={title:t('ROAMA Signal Quest','ROAMA Sinyal Macerası'),text:copy.hook,url:`${window.location.origin}${url}`};
+      const payload={title:t('ROAMA Kids · Signal Quest','ROAMA Kids · Sinyal Görevi'),text:copy.hook,url:`${window.location.origin}${url}`};
       if(typeof navigator.share==='function'){
         const shared=await shareFileOrLink(file,payload,navigator.share.bind(navigator),navigator.canShare?.bind(navigator));
         if(shared==='file'){

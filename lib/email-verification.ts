@@ -38,13 +38,13 @@ export async function sendVerificationEmail(email:string,token:string,language:L
     body:JSON.stringify({
       from,
       to:[email],
-      subject:tr?'ROAMA Signal Quest yıldızınızı doğrulayın':'Verify your ROAMA Signal Quest star',
+      subject:tr?'ROAMA Kids · Sinyal Görevi yıldızınızı doğrulayın':'Verify your ROAMA Kids · Signal Quest star',
       text:tr
-        ?`ROAMA Signal Quest yıldızınızı almak veya mevcut yıldızınıza ulaşmak için yetişkin e-postanızı doğrulayın. Bu tek kullanımlık bağlantı 20 dakika geçerlidir:\n\n${verificationUrl}\n\nBu e-postayı siz istemediyseniz dikkate almayabilirsiniz.`
-        :`Verify your adult email to continue or recover your ROAMA Signal Quest star. This link expires in 20 minutes and can only be used once:\n\n${verificationUrl}\n\nIf you did not request this email, you can ignore it.`,
+        ?`ROAMA Kids · Sinyal Görevi yıldızınızı almak veya mevcut yıldızınıza ulaşmak için yetişkin e-postanızı doğrulayın. Bu tek kullanımlık bağlantı 20 dakika geçerlidir:\n\n${verificationUrl}\n\nBu e-postayı siz istemediyseniz dikkate almayabilirsiniz.`
+        :`Verify your adult email to continue or recover your ROAMA Kids · Signal Quest star. This link expires in 20 minutes and can only be used once:\n\n${verificationUrl}\n\nIf you did not request this email, you can ignore it.`,
       html:tr
-        ?`<p>ROAMA Signal Quest yıldızınız için yetişkin e-postanızı doğrulayın.</p><p><a href="${verificationUrl}">E-postamı doğrula</a></p><p>Bu tek kullanımlık bağlantı 20 dakika geçerlidir. Bu e-postayı siz istemediyseniz dikkate almayabilirsiniz.</p>`
-        :`<p>Verify your adult email to continue or recover your ROAMA Signal Quest star.</p><p><a href="${verificationUrl}">Verify my email</a></p><p>This link expires in 20 minutes and can only be used once. If you did not request this email, you can ignore it.</p>`,
+        ?`<p>ROAMA Kids · Sinyal Görevi yıldızınız için yetişkin e-postanızı doğrulayın.</p><p><a href="${verificationUrl}">E-postamı doğrula</a></p><p>Bu tek kullanımlık bağlantı 20 dakika geçerlidir. Bu e-postayı siz istemediyseniz dikkate almayabilirsiniz.</p>`
+        :`<p>Verify your adult email to continue or recover your ROAMA Kids · Signal Quest star.</p><p><a href="${verificationUrl}">Verify my email</a></p><p>This link expires in 20 minutes and can only be used once. If you did not request this email, you can ignore it.</p>`,
     }),
     signal:AbortSignal.timeout(8000),
   });

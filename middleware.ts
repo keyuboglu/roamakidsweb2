@@ -3,7 +3,7 @@ import {detectLanguage} from '@/lib/funnel';
 
 export function middleware(request:NextRequest) {
   const headers=new Headers(request.headers);
-  headers.set('x-roama-language',detectLanguage(request.nextUrl.search,request.headers.get('accept-language')?.split(',')[0]||'en'));
+  headers.set('x-roama-language',detectLanguage(request.nextUrl.search));
   return NextResponse.next({request:{headers}});
 }
 

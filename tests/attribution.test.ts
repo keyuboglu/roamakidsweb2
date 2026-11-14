@@ -111,7 +111,7 @@ describe('riddle card formats',()=>{
       landscape:{width:1200,height:630},
       story:{width:1080,height:1920},
     });
-    expect(RIDDLE_CARD_COPY['shadow-signal']).toEqual({hook:'What could this be?',supporting:'Your home is full of signals.',hookInArtwork:true});
+    expect(RIDDLE_CARD_COPY['shadow-signal']).toEqual({hook:'Make your shadow signal.',supporting:'With a grown-up: shine a light on a wall, make a hand shadow, turn off the light and listen to the night for one minute.'});
     expect(RIDDLE_CARD_COPY['micro-world-safari']).toEqual({hook:'Can you guess what this tiny world belongs to?',supporting:'Look closer. Discover the extraordinary.'});
     expect(RIDDLE_CARD_COPY['gravity-defier']).toEqual({hook:"This shouldn't balance… but does it?",supporting:'Three safe objects. One surprising challenge.'});
   });

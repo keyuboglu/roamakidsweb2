@@ -20,15 +20,16 @@ describe('app store and grown-up challenge sharing',()=>{
   it('renders the App Store destination immediately while retaining the adult Android waitlist',()=>{
     const markup=render('en',createElement(AppDownloadCTA));
     expect(markup).toContain('Continue the Adventure on the App Store');
-    expect(markup).toContain('Coming soon on Google Play');
-    expect(markup).toContain('Adult email address');
+    expect(markup).toContain('Coming soon to Google Play');
+    expect(markup).not.toContain('type="email"');
     expect(markup).not.toContain('Loading app options');
   });
 
   it('uses the completion-specific App Store attribution and Pip bridge copy',()=>{
     const markup=render('en',createElement(AppBridge,{completion:true,slug:'shadow-signal'}));
     expect(markup).toContain('Loved this? Continue the adventure with Pip in ROAMA Kids.');
-    expect(markup).toContain('ct=signalquest_complete');
+    expect(markup).toContain('ct=signalquest');
+    expect(markup).not.toContain('ct=signalquest_complete');
     const turkish=render('tr',createElement(AppBridge,{completion:true}));
     expect(turkish).toContain('Pip ile maceraya devam edin');
   });
@@ -39,7 +40,7 @@ describe('app store and grown-up challenge sharing',()=>{
     expect(url.pathname).toBe('/challenge/shadow-signal');
     expect(url.searchParams.get('lang')).toBe('en');
     expect(url.searchParams.get('utm_source')).toBe('share');
-    expect(challengeShareText('The Shadow Signal','en')).toBe('We just did The Shadow Signal — a free screen-free challenge for 6–12s');
-    expect(challengeShareText('Gölge Sinyali','tr')).toContain('6–12 yaş');
+    expect(challengeShareText('Shadow Signal','en')).toBe('We just did Shadow Signal — a free screen-free challenge for 6–12s');
+    expect(challengeShareText('Gölge İşareti','tr')).toContain('6–12 yaş');
   });
 });

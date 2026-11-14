@@ -28,8 +28,8 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
  const challenge=await getChallenge(slug);
  if(!challenge)return {title:language==='tr'?'Görev bulunamadı':'Challenge not found',robots:{index:false,follow:false}};
  const canonical=languageAlternates(`/challenge/${slug}`,language).canonical;
- const image=challenge.imageUrl||'/og-great-signal.png';
- const title=`${translation?.title||challenge.title} | ${language==='tr'?'ROAMA Sinyal Macerası':'ROAMA Signal Quest'}`;
+ const image=`/og-${slug}${language==='tr'?'-tr':''}.png`;
+ const title=`${language==='tr'?'ROAMA Kids · Sinyal Görevi':'ROAMA Kids · Signal Quest'} | ${translation?.title||challenge.title}`;
  const description=translation?`${translation.description} 6–12 yaş çocuklar ve aileler için ücretsiz, ekransız bir görev. Uygulama, fotoğraf veya kayıt gerekmez.`:challenge.seoDescription;
  return {
   title,
@@ -41,7 +41,7 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
    type:'article',
    url:canonical,
    locale:language==='tr'?'tr_TR':'en_US',
-   images:[{url:image,width:661,height:793,alt:translation?.imageAlt||challenge.imageAlt}],
+   images:[{url:image,width:1200,height:630,alt:translation?.imageAlt||challenge.imageAlt}],
   },
   twitter:{card:'summary_large_image',title,description,images:[image]},
  };
@@ -58,12 +58,12 @@ export default async function ChallengePage({params}:{params:Promise<{slug:strin
  const structuredData={
   '@context':'https://schema.org',
   '@graph':[
-   {'@type':'WebSite','@id':`${origin}/#website`,url:origin,name:language==='tr'?'ROAMA Sinyal Macerası':'ROAMA Signal Quest',inLanguage:language},
+   {'@type':'WebSite','@id':`${origin}/#website`,url:origin,name:language==='tr'?'ROAMA Kids · Sinyal Görevi':'ROAMA Kids · Signal Quest',inLanguage:language},
    {
     '@type':'WebPage',
     '@id':`${canonical}#webpage`,
     url:canonical,
-    name:`${copy.title} | ${language==='tr'?'ROAMA Sinyal Macerası':'ROAMA Signal Quest'}`,
+    name:`${language==='tr'?'ROAMA Kids · Sinyal Görevi':'ROAMA Kids · Signal Quest'} | ${copy.title}`,
     description:language==='tr'?copy.description:challenge.seoDescription,
     inLanguage:language,
     isPartOf:{'@id':`${origin}/#website`},
@@ -74,7 +74,7 @@ export default async function ChallengePage({params}:{params:Promise<{slug:strin
     '@type':'BreadcrumbList',
     '@id':`${canonical}#breadcrumb`,
     itemListElement:[
-     {'@type':'ListItem',position:1,name:language==='tr'?'ROAMA Sinyal Macerası':'ROAMA Signal Quest',item:origin},
+     {'@type':'ListItem',position:1,name:language==='tr'?'ROAMA Kids · Sinyal Görevi':'ROAMA Kids · Signal Quest',item:origin},
      {'@type':'ListItem',position:2,name:copy.title,item:canonical},
     ],
    },

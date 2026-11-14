@@ -12,6 +12,7 @@ import {turkishChallenges} from '@/lib/challenge-translations';
 import {trackEvent} from '@/lib/client-analytics';
 import {challengeDisplayArtwork} from '@/lib/challenge-content';
 import {RIDDLE_CARD_COPY} from '@/lib/riddle-cards';
+import {OFFICIAL_SITE_URL} from '@/lib/brand';
 
 const AppBridge=dynamic(()=>import('@/components/AppBridge'));
 const ChallengeShareActions=dynamic(()=>import('@/components/ChallengeShareActions'));
@@ -62,8 +63,8 @@ export default function ChallengeDetail({challenge:original,verificationEnabled}
   }
 
   return <main className="detail-page">
-    <div className="detail-brand-row"><Brand href={localizedPath('/',language)}/><Link className="text-link" href={localizedPath('/stars',language)}>{t('Explore a million stars','Bir milyon yıldızı keşfet')} ↗</Link></div>
-    <Link href={localizedPath('/',language)} className="detail-back">← {t('The Great Signal Quest','Büyük Sinyal Macerası')}</Link>
+    <div className="detail-brand-row"><Brand href={localizedPath('/',language)}/><nav><a href={OFFICIAL_SITE_URL}>roama.tech ↗</a> · <Link className="text-link" href={localizedPath('/stars',language)}>{t('Explore a million stars','Bir milyon yıldızı keşfet')} ↗</Link></nav></div>
+    <Link href={localizedPath('/',language)} className="detail-back">← {t('ROAMA Kids · Signal Quest','ROAMA Kids · Sinyal Görevi')}</Link>
     <p className="eyebrow">{t('CHOOSE ANY ONE CHALLENGE · ages 6–12','İSTEDİĞİNİZ BİR GÖREVİ SEÇİN · 6–12 yaş')} {!tr&&challenge.duration&&`· ${challenge.duration}`}</p>
     <h1>{challenge.title}</h1><p className="detail-lede">{challenge.shortDescription}</p>
     <a className="button button-gold" href="#challenge-steps" onClick={start}>{started?t('Continue challenge','Göreve devam et'):t('Start challenge','Göreve başla')} ↓</a>
@@ -78,7 +79,8 @@ export default function ChallengeDetail({challenge:original,verificationEnabled}
     <section className="detail-complete"><h2>{t('Completed this challenge?','Görevi tamamladınız mı?')}</h2><p>{t('Participation is private by default. No app download, photo, video or sign-up is required. By confirming below, an adult organizer reports that the activity was completed safely.','Katılım varsayılan olarak gizlidir. Uygulama, fotoğraf, video veya kayıt gerekmez. Aşağıda onay veren yetişkin, etkinliğin güvenle tamamlandığını bildirir.')}</p>
       <button className="button button-gold" onClick={complete} disabled={completed}>{completed?t('Challenge completed!','Görev tamamlandı!'):t('Our family completed this challenge','Ailece bu görevi tamamladık')}</button>
     </section>
-    {completed&&<><AppBridge slug={challenge.slug} completion/><ChallengeShareActions slug={challenge.slug} title={challenge.title}/><section className="detail-complete"><h2>{t('Claim a star (optional)','Yıldızınızı alın (isteğe bağlı)')}</h2><p>{t('Only an adult email verification creates a permanent web star. This is separate from the Android launch list.','Kalıcı web yıldızı yalnızca yetişkin e-posta doğrulamasıyla oluşturulur. Android lansman listesinden ayrıdır.')}</p><CompletionForm challengeSlug={challenge.slug} verificationEnabled={verificationEnabled}/></section></>}
+    {completed&&<><AppBridge slug={challenge.slug} completion/><ChallengeShareActions slug={challenge.slug} title={challenge.title}/><section className="detail-complete"><h2>{t('Claim a star (optional)','Yıldızınızı alın (isteğe bağlı)')}</h2><p>{t('Only an adult email verification creates a permanent web star. Your email is used only for verification and recovery, never marketing.','Kalıcı web yıldızı yalnızca yetişkin e-posta doğrulamasıyla oluşturulur. E-postanız yalnızca doğrulama ve kurtarma içindir, pazarlama için kullanılmaz.')}</p><CompletionForm challengeSlug={challenge.slug} verificationEnabled={verificationEnabled}/></section></>}
     <p><Link className="text-link" href={localizedPath('/#challenges',language)}>← {t('Return to the challenges','Görevlere dön')}</Link></p>
+    <footer><a href={OFFICIAL_SITE_URL}>roama.tech ↗</a></footer>
   </main>;
 }

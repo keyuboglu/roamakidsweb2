@@ -10,6 +10,9 @@
 
 :focus-visible{outline:2px solid var(--gold);outline-offset:4px}
 .brand img{border-radius:10px;flex-shrink:0}
+.brand img.brand-wordmark,.star-footer .brand img.brand-wordmark{width:125px;height:auto;object-fit:contain;border-radius:0}
+.great-signal-layer{margin-block:24px;padding:24px;border:1px solid #6ee7ff;border-radius:16px}
+.great-signal-layer input{margin-right:8px}
 .counter-map-link{display:inline-block;margin-top:16px;font-size:12px;color:#775b2e;border-bottom:1px solid #b6a17b;padding-bottom:5px}
 .empty-challenges .card-link{display:inline-block;margin-top:16px}
 footer>div{display:flex;gap:20px;flex-wrap:wrap}

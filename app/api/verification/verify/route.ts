@@ -27,7 +27,10 @@ export async function POST(req:NextRequest) {
       return NextResponse.json({error:'Too many verification attempts. Please wait before trying again.'},{status:429});
     }
     const tokenHash=createHash('sha256').update(parsed.data.token).digest('hex');
-    const result=await redeemEmailVerificationToken(tokenHash,networkHash);
+    // Cloudflare supplies coarse country only; never trust a form-provided location.
+    const edgeCountry=process.env.CLOUDFLARE_WORKER==='true'?req.headers.get('cf-ipcountry'):null;
+    const countryCode=edgeCountry&&/^[A-Z]{2}$/.test(edgeCountry)&&!['XX','T1','EU'].includes(edgeCountry)?edgeCountry:null;
+    const result=await redeemEmailVerificationToken(tokenHash,networkHash,countryCode);
     if(!result.ok){
       if(result.reason==='full')return NextResponse.json({error:'The million-star sky is full. This link was not used.'},{status:409});
       const message=result.reason==='expired'

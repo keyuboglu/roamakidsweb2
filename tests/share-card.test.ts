@@ -3,7 +3,7 @@ import {shareFileOrLink} from '@/lib/share-card';
 
 describe('riddle card sharing',()=>{
   const file=()=>new File(['card'], 'riddle-card.png',{type:'image/png'});
-  const payload:ShareData={title:'ROAMA Signal Quest',text:'What could this be?',url:'https://signalquest.roama.tech/challenge/shadow-signal?ref=e9d8c221-b899-47fc-9dc7-9e03ebfd12de'};
+  const payload:ShareData={title:'ROAMA Kids · Signal Quest',text:'What could this be?',url:'https://signalquest.roama.tech/challenge/shadow-signal?ref=e9d8c221-b899-47fc-9dc7-9e03ebfd12de'};
 
   it('shares the generated image and tracked challenge URL when file sharing is supported',async()=>{
     const share=vi.fn<(data:ShareData)=>Promise<void>>().mockResolvedValue();

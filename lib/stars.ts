@@ -12,9 +12,9 @@ export function shouldRevealStarCount(count:number) {
   return Number.isInteger(count)&&count>=FIRST_LIGHT_THRESHOLD;
 }
 
-export type PublicStar={starNumber:number;starName:string|null};
+export type PublicStar={starNumber:number;starName:string|null;greatSignal?:boolean};
 export type StarTile={tileX:number;tileY:number;count:number};
-export type StarOverview={capacity:number;count:number;tiles:StarTile[];recent:PublicStar[]};
+export type StarOverview={capacity:number;count:number;tiles:StarTile[];recent:PublicStar[];greatSignal?:{total:number;countries:number;tiles:StarTile[]}};
 
 export function isStarNumber(value:number) {
   return Number.isInteger(value)&&value>=1&&value<=STAR_CAPACITY;
