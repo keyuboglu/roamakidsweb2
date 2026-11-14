@@ -1,4 +1,4 @@
-# ROAMA Kids — ROAMA Kids · Signal Quest
+# ROAMA Kids · Signal Quest
 
 An adult-organized, one-time ROAMA Kids campaign built with Next.js, TypeScript, PostgreSQL, and Prisma. The browser never changes the global total directly: an adult email verification creates at most one unique star inside a database transaction, and the server returns the authoritative verified-adult-email claim count. The counter is not a count of children.
 
