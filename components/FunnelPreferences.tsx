@@ -2,8 +2,9 @@
 
 import {createContext,useContext,useEffect,useSyncExternalStore,type ReactNode} from 'react';
 import {usePathname} from 'next/navigation';
-import {currentAttribution} from '@/lib/attribution';
 import {detectDevice,detectLanguage,type Device,type Language} from '@/lib/funnel';
+import {trackEvent} from '@/lib/client-analytics';
+import {ANALYTICS_PAGES} from '@/lib/anonymous-analytics';
 
 function subscribe(callback:()=>void) {
   window.addEventListener('popstate',callback);
@@ -38,7 +39,14 @@ export default function FunnelPreferences() {
   const pathname=usePathname();
   useEffect(()=>{
     document.documentElement.lang=language;
-    currentAttribution();
+    try {
+      window.sessionStorage.removeItem('roama-campaign-attribution-v1');
+    } catch {
+      console.warn('Legacy campaign attribution could not be removed from session storage.');
+    }
   },[language,pathname]);
+  useEffect(()=>{
+    if(ANALYTICS_PAGES.includes(pathname))trackEvent('page_view');
+  },[pathname,language]);
   return null;
 }

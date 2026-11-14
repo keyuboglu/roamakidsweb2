@@ -2,7 +2,6 @@
 
 import {useState,type FormEvent} from 'react';
 import Link from 'next/link';
-import {attributionFields,currentAttribution} from '@/lib/attribution';
 import {useLanguage} from '@/components/FunnelPreferences';
 import {localizedPath} from '@/lib/funnel';
 
@@ -33,7 +32,6 @@ export default function CompletionForm({challengeSlug,verificationEnabled}:{chal
           publicNameConfirmed:form.get('publicNameConfirmed')==='on',
           website:form.get('website'),
           language,
-          ...attributionFields(currentAttribution()),
         }),
       });
       const result=await response.json() as {message?:string;error?:string};

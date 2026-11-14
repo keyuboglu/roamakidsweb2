@@ -5,7 +5,6 @@ import Image from 'next/image';
 import Link from 'next/link';
 import Brand from '@/components/Brand';
 import {OFFICIAL_SITE_URL} from '@/lib/brand';
-import {trackEvent} from '@/lib/client-analytics';
 import {appendAttribution,currentAttribution} from '@/lib/attribution';
 import AppDownloadCTA from '@/components/AppDownloadCTA';
 import {useLanguage} from '@/components/FunnelPreferences';
@@ -61,10 +60,6 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
     'micro-world-safari':{title:'MICRO-WORLD SAFARI',defaultTitle:'The Micro-World Safari',description:'Explore the tiny wonders around you.',defaultDescription:'What if you looked a little closer?',alt:'A child looks through a magnifying glass at the detailed veins of a green leaf.',accent:'green'},
     'gravity-defier':{title:'GRAVITY DEFIER',defaultTitle:'The Gravity Defier',description:'Experiment, discover, and challenge gravity.',defaultDescription:'Can you balance three objects in a way that looks impossible?',alt:'A child carefully balances light household objects in a surprising stack.',accent:'blue'},
   };
-
-  useEffect(()=>{
-    trackEvent('page_view');
-  },[]);
 
   useEffect(()=>{
     const section=document.querySelector('.star-journey');

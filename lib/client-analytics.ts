@@ -1,6 +1,7 @@
-import {attributionFields,currentAttribution,type Attribution} from '@/lib/attribution';
+import {currentAttribution,type Attribution} from '@/lib/attribution';
+import {analyticsSource,anonymousEvent,type ClientEvent} from '@/lib/anonymous-analytics';
 
-export type ClientEvent='page_view'|'challenge_view'|'challenge_start'|'challenge_complete'|'app_store_click'|'completion_started'|'share'|'store_click'|'star_card_downloaded'|'star_card_shared';
+export type {ClientEvent} from '@/lib/anonymous-analytics';
 export type EventDetails={slug?:string;store?:'ios'|'android';target?:string};
 
 export function trackEvent(event:ClientEvent,details:EventDetails={},attribution?:Attribution) {
@@ -8,8 +9,13 @@ export function trackEvent(event:ClientEvent,details:EventDetails={},attribution
   void fetch('/api/events',{
     method:'POST',
     headers:{'Content-Type':'application/json'},
+    credentials:'omit',
+    referrerPolicy:'no-referrer',
     keepalive:true,
-    body:JSON.stringify({event,...details,...attributionFields(campaignAttribution)}),
+    body:JSON.stringify({
+      event:anonymousEvent(event,details.slug,typeof window==='undefined'?undefined:window.location.pathname),
+      source:analyticsSource(campaignAttribution.source),
+    }),
   }).then(response=>{
     if(!response.ok)console.warn('Campaign analytics unavailable.',response.status);
   }).catch(()=>console.warn('Campaign analytics network request failed.'));

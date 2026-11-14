@@ -2,22 +2,12 @@ import {randomUUID} from 'node:crypto';
 import {Prisma} from '@roama/prisma-client';
 import {prisma} from '@/lib/prisma';
 import {STAR_CAPACITY} from '@/lib/stars';
-import {sanitizeAttribution,type Attribution} from '@/lib/attribution';
+import type {Attribution} from '@/lib/attribution';
 
 class ConstellationFullError extends Error {}
 
 type ClaimInput={challengeId:string;idempotencyKey:string;abuseKey:string;adultEmailHash:string;starName?:string|null;attribution?:Attribution;countryCode?:string|null};
 type Transaction=Prisma.TransactionClient;
-
-function tokenAttribution(token:{source:string|null;medium:string|null;campaign:string|null;content:string|null;referralCode:string|null}) {
-  return sanitizeAttribution({
-    source:token.source,
-    medium:token.medium,
-    campaign:token.campaign,
-    content:token.content,
-    referralCode:token.referralCode,
-  });
-}
 
 async function createStar(tx:Transaction,input:ClaimInput) {
   const {starsIssued}=await tx.campaignConfig.upsert({
@@ -38,7 +28,6 @@ async function createStar(tx:Transaction,input:ClaimInput) {
     },
     select:{starNumber:true,starName:true},
   });
-  await tx.analyticsEvent.create({data:{type:'COMPLETION_ACCEPTED',challengeId:input.challengeId,...input.attribution}});
   const count=await tx.completion.count({where:{status:'ACCEPTED',emailVerifiedAt:{not:null}}});
   return {ok:true as const,count,duplicate:false,...star,attribution:input.attribution||{}};
 }
@@ -116,7 +105,7 @@ export async function redeemEmailVerificationToken(tokenHash:string,abuseKey:str
           count:await tx.completion.count({where:{status:'ACCEPTED',emailVerifiedAt:{not:null}}}),
           duplicate:true,
           ...prior,
-          attribution:tokenAttribution(token),
+          attribution:{},
           challengeSlug:token.challenge.slug,
         };
       }
@@ -127,7 +116,6 @@ export async function redeemEmailVerificationToken(tokenHash:string,abuseKey:str
         countryCode,
         adultEmailHash:token.adultEmailHash,
         starName:token.starName,
-        attribution:tokenAttribution(token),
       });
       return {...created,challengeSlug:token.challenge.slug};
     },{maxWait:30000,timeout:30000});
@@ -135,8 +123,8 @@ export async function redeemEmailVerificationToken(tokenHash:string,abuseKey:str
     if(error instanceof ConstellationFullError)return {ok:false as const,reason:'full' as const};
     if(isUniqueConstraint(error)){
       await prisma.emailVerificationToken.updateMany({where:{tokenHash,consumedAt:null},data:{consumedAt:new Date()}});
-      const token=await prisma.emailVerificationToken.findUnique({where:{tokenHash},select:{adultEmailHash:true,source:true,medium:true,campaign:true,content:true,referralCode:true,challenge:{select:{slug:true}}}});
-      const prior=await existingStar(token?.adultEmailHash||'',token?tokenAttribution(token):{});
+      const token=await prisma.emailVerificationToken.findUnique({where:{tokenHash},select:{adultEmailHash:true,challenge:{select:{slug:true}}}});
+      const prior=await existingStar(token?.adultEmailHash||'');
       if(prior)return {...prior,challengeSlug:token?.challenge.slug};
     }
     throw error;

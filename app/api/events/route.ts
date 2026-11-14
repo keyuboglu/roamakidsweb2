@@ -1,4 +1,33 @@
-import {NextRequest,NextResponse} from 'next/server';import {z} from 'zod';import {prisma} from '@/lib/prisma';import {abuseKey,rateLimit} from '@/lib/rate-limit';import {isSameOrigin} from '@/lib/session';import {sanitizeAttribution} from '@/lib/attribution';
-const schema=z.object({event:z.enum(['page_view','challenge_view','challenge_start','challenge_complete','app_store_click','completion_started','share','store_click','star_card_downloaded','star_card_shared']),slug:z.string().max(100).optional(),store:z.enum(['ios','android']).optional(),target:z.enum(['app_store','landscape','story','card_file','challenge_link_share','challenge_link_copy','star_link_share','star_link_copy']).optional(),source:z.string().max(100).optional(),medium:z.string().max(100).optional(),campaign:z.string().max(100).optional(),content:z.string().max(100).optional(),referralCode:z.string().max(100).optional()});
-const types={page_view:'PAGE_VIEW',challenge_view:'CHALLENGE_VIEW',challenge_start:'CHALLENGE_START',challenge_complete:'CHALLENGE_COMPLETE',app_store_click:'STORE_CLICK',completion_started:'COMPLETION_STARTED',share:'SHARE',store_click:'STORE_CLICK',star_card_downloaded:'STAR_CARD_DOWNLOADED',star_card_shared:'STAR_CARD_SHARED'} as const;
-export async function POST(req:NextRequest){if(!isSameOrigin(req))return NextResponse.json({error:'Origin rejected.'},{status:403});const parsed=schema.safeParse(await req.json().catch(()=>null));if(!parsed.success)return NextResponse.json({error:'Invalid event.'},{status:400});try{if(!await rateLimit(`analytics:${abuseKey(req)}`,80,3600))return NextResponse.json({ok:true});const challenge=parsed.data.slug?await prisma.challenge.findFirst({where:{slug:parsed.data.slug,status:'PUBLISHED'},select:{id:true}}):null;const attribution=sanitizeAttribution(parsed.data);await prisma.analyticsEvent.create({data:{type:types[parsed.data.event],challengeId:challenge?.id,...attribution,target:parsed.data.target||parsed.data.store}});return NextResponse.json({ok:true});}catch(error){console.error('First-party campaign analytics unavailable.',error instanceof Error?error.name:'UnknownError');return NextResponse.json({error:'Analytics unavailable.'},{status:503});}}
+import {NextRequest,NextResponse} from 'next/server';
+import {z} from 'zod';
+import {prisma} from '@/lib/prisma';
+import {isSameOrigin} from '@/lib/session';
+import {ANALYTICS_SOURCES,ANONYMOUS_EVENTS,analyticsDay,analyticsCutoff} from '@/lib/anonymous-analytics';
+
+const schema=z.object({
+  event:z.string().refine(event=>ANONYMOUS_EVENTS.has(event)),
+  source:z.enum(ANALYTICS_SOURCES),
+}).strict();
+
+export async function POST(req:NextRequest) {
+  if(!isSameOrigin(req))return NextResponse.json({error:'Origin rejected.'},{status:403});
+  const parsed=schema.safeParse(await req.json().catch(()=>null));
+  if(!parsed.success)return NextResponse.json({error:'Only an allowed event and anonymous source category are accepted.'},{status:400});
+  const now=new Date();
+  const key={event:parsed.data.event,date:analyticsDay(now),source:parsed.data.source};
+  try {
+    await prisma.$transaction([
+      prisma.anonymousDailyCount.deleteMany({where:{date:{lt:analyticsCutoff(now)}}}),
+      prisma.anonymousDailyCount.upsert({
+        where:{event_date_source:key},
+        create:{...key,count:1},
+        update:{count:{increment:1}},
+        select:{count:true},
+      }),
+    ]);
+    return NextResponse.json({ok:true},{headers:{'Cache-Control':'no-store'}});
+  } catch(error) {
+    console.error('Anonymous daily totals unavailable.',error instanceof Error?error.name:'UnknownError');
+    return NextResponse.json({error:'Anonymous totals unavailable.'},{status:503});
+  }
+}

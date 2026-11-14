@@ -67,30 +67,24 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
    const cookie=`roama_admin=${issueSession(admin.id,admin.email)}`;
    const listing=await getAdminStars(new NextRequest('https://roama.test/api/admin/stars',{headers:{cookie}}));
    expect(listing.status).toBe(200);
-   await prisma.analyticsEvent.create({data:{
-    type:'STAR_CARD_DOWNLOADED',
-    challengeId,
-    target:'landscape',
-    source:'creator_slug',
-    medium:'creator',
-    campaign:'roama_signal_quest_launch',
-    content:'shadow_wall_creature_a',
-    referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
-   }});
+   const day=new Date();day.setUTCHours(0,0,0,0);
+   await prisma.anonymousDailyCount.upsert({
+    where:{event_date_source:{event:'star_card_downloaded',date:day,source:'wa'}},
+    create:{event:'star_card_downloaded',date:day,source:'wa',count:14},
+    update:{count:14},
+   });
    const report=await getAdminReports(new NextRequest('https://roama.test/api/admin/reports?days=7',{headers:{cookie}}));
    expect(report.status).toBe(200);
    const reportData=await report.json();
    expect(reportData.attribution).toContainEqual(expect.objectContaining({
-    type:'STAR_CARD_DOWNLOADED',
-    target:'landscape',
-    source:'creator_slug',
-    medium:'creator',
-    campaign:'roama_signal_quest_launch',
-    content:'shadow_wall_creature_a',
-    referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
-    challenge:slug,
+    type:'star_card_downloaded',
+    date:day.toISOString().slice(0,10),
+    source:'wa',
+    count:14,
    }));
    expect(JSON.stringify(reportData)).not.toContain('adultEmail');
+   expect(JSON.stringify(reportData)).not.toMatch(/referralCode|medium|campaign|content|userAgent|sessionId/);
+   expect((await getAdminReports(new NextRequest('https://roama.test/api/admin/reports?days=90',{headers:{cookie}}))).status).toBe(400);
    expect((await getAdminReports(new NextRequest('https://roama.test/api/admin/reports?days=365',{headers:{cookie}}))).status).toBe(400);
    expect((await listing.json()).stars.some((item:{starNumber:number})=>item.starNumber===star.starNumber)).toBe(true);
    const remove=(origin:string)=>removeStarName(new NextRequest('https://roama.test/api/admin/stars',{method:'DELETE',headers:{cookie,origin,'Content-Type':'application/json'},body:JSON.stringify({starNumber:star.starNumber})}));
@@ -177,23 +171,13 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
     where:{type:'COMPLETION_STARTED',challengeId},
     orderBy:{createdAt:'desc'},
    });
-   expect(attributedStart).toMatchObject({
-    source:'creator_slug',
-    medium:'creator',
-    campaign:'roama_signal_quest_launch',
-    content:'micro_zoomout_a',
-    referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
-   });
+   expect(attributedStart).toBeNull();
+   const unlinkedToken=await prisma.emailVerificationToken.findUniqueOrThrow({where:{tokenHash:createHash('sha256').update(firstToken).digest('hex')}});
+   expect(unlinkedToken).toMatchObject({source:null,medium:null,campaign:null,content:null,referralCode:null});
    const first=await verify(firstToken,`198.51.100.${Math.floor(Math.random()*200)+1}`);
    expect(first.status).toBe(200);
    const star=await first.json();
-   expect(star).toMatchObject({starName:'Fictional Explorer',count:countBefore+1,recovered:false,attribution:{
-    source:'creator_slug',
-    medium:'creator',
-    campaign:'roama_signal_quest_launch',
-    content:'micro_zoomout_a',
-    referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
-   }});
+   expect(star).toMatchObject({starName:'Fictional Explorer',count:countBefore+1,recovered:false,attribution:{}});
    const saved=await prisma.completion.findUniqueOrThrow({where:{adultEmailHash:adultEmailDigest(email)}});
    expect(saved).toMatchObject({starNumber:star.starNumber,starName:'Fictional Explorer',emailVerifiedAt:expect.any(Date)});
    expect(JSON.stringify(star)).not.toContain(email);
@@ -201,13 +185,7 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
     where:{type:'COMPLETION_ACCEPTED',challengeId},
     orderBy:{createdAt:'desc'},
    });
-   expect(attributedConversion).toMatchObject({
-    source:'creator_slug',
-    medium:'creator',
-    campaign:'roama_signal_quest_launch',
-    content:'micro_zoomout_a',
-    referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
-   });
+   expect(attributedConversion).toBeNull();
    expect(JSON.stringify(attributedConversion)).not.toContain(email);
    expect(JSON.stringify(attributedConversion)).not.toContain(firstToken);
 

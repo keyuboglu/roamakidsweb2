@@ -1,7 +1,8 @@
 'use client';
 
 import {useState} from 'react';
-import {attributionFields,currentAttribution,trackedChallengeUrl,type Attribution} from '@/lib/attribution';
+import {currentAttribution,trackedChallengeUrl,type Attribution} from '@/lib/attribution';
+import {trackEvent} from '@/lib/client-analytics';
 import {useLanguage} from '@/components/FunnelPreferences';
 import {localizedPath,type Language} from '@/lib/funnel';
 import {containImage,RIDDLE_CARD_FORMATS,type RiddleCardFormat} from '@/lib/riddle-cards';
@@ -11,12 +12,7 @@ type CardCopy={hook:string;supporting:string;hookInArtwork?:boolean};
 type Props={slug:string;imageUrl:string;copy:CardCopy};
 
 function track(event:'star_card_downloaded'|'star_card_shared'|'share',slug:string,target:string,attribution:Attribution) {
-  void fetch('/api/events',{
-    method:'POST',
-    headers:{'Content-Type':'application/json'},
-    keepalive:true,
-    body:JSON.stringify({event,slug,target,...attributionFields(attribution)}),
-  }).catch(error=>console.warn('Challenge-card analytics unavailable.',error));
+  trackEvent(event,{slug,target},attribution);
 }
 
 function wrapText(context:CanvasRenderingContext2D,text:string,maxWidth:number) {
@@ -190,7 +186,7 @@ export default function RiddleCardActions({slug,imageUrl,copy:originalCopy}:Prop
 
   function invitationUrl() {
     if(trackedUrl)return trackedUrl;
-    const url=trackedChallengeUrl(localizedPath(`/challenge/${slug}`,language),currentAttribution(),slug);
+    const url=trackedChallengeUrl(localizedPath(`/challenge/${slug}`,language));
     setTrackedUrl(url);
     return url;
   }

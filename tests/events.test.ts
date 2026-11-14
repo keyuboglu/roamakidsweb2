@@ -1,110 +1,75 @@
-import {beforeEach,describe,expect,it,vi} from 'vitest';
+import {beforeEach,afterEach,describe,expect,it,vi} from 'vitest';
 import {NextRequest} from 'next/server';
+import {analyticsDay,analyticsCutoff} from '@/lib/anonymous-analytics';
 
-const mocks=vi.hoisted(()=>({
-  create:vi.fn(),
-  challengeFindFirst:vi.fn(),
-  sameOrigin:vi.fn(),
-  rateLimit:vi.fn(),
-  abuseKey:vi.fn(),
-}));
-
+const mocks=vi.hoisted(()=>({upsert:vi.fn(),deleteMany:vi.fn(),transaction:vi.fn(),sameOrigin:vi.fn(),abuseKey:vi.fn()}));
 vi.mock('@/lib/prisma',()=>({prisma:{
-  analyticsEvent:{create:mocks.create},
-  challenge:{findFirst:mocks.challengeFindFirst},
+  anonymousDailyCount:{upsert:mocks.upsert,deleteMany:mocks.deleteMany},
+  $transaction:mocks.transaction,
 }}));
 vi.mock('@/lib/session',()=>({isSameOrigin:mocks.sameOrigin}));
-vi.mock('@/lib/rate-limit',()=>({rateLimit:mocks.rateLimit,abuseKey:mocks.abuseKey}));
-
+vi.mock('@/lib/rate-limit',()=>({abuseKey:mocks.abuseKey}));
 import {POST} from '@/app/api/events/route';
 
 function request(body:unknown,headers:Record<string,string>={}) {
   return new NextRequest('https://signalquest.test/api/events',{
-    method:'POST',
-    headers:{origin:'https://signalquest.test','content-type':'application/json',...headers},
-    body:JSON.stringify(body),
+    method:'POST',headers:{origin:'https://signalquest.test','content-type':'application/json',...headers},body:JSON.stringify(body),
   });
 }
 
-describe('campaign event endpoint',()=>{
+describe('anonymous daily event endpoint',()=>{
   beforeEach(()=>{
     vi.clearAllMocks();
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-11-20T23:59:59Z'));
     mocks.sameOrigin.mockReturnValue(true);
-    mocks.rateLimit.mockResolvedValue(true);
-    mocks.abuseKey.mockReturnValue('hashed-network-key');
-    mocks.challengeFindFirst.mockResolvedValue({id:'challenge-id'});
-    mocks.create.mockResolvedValue({id:'event-id'});
+    mocks.transaction.mockResolvedValue([{count:0},{count:14}]);
   });
+  afterEach(()=>vi.useRealTimers());
 
-  it('rejects cross-origin event requests',async()=>{
+  it('rejects cross-origin requests without a database write',async()=>{
     mocks.sameOrigin.mockReturnValue(false);
-    expect((await POST(request({event:'page_view'}))).status).toBe(403);
-    expect(mocks.create).not.toHaveBeenCalled();
+    expect((await POST(request({event:'page_view:/',source:'direct'}))).status).toBe(403);
+    expect(mocks.upsert).not.toHaveBeenCalled();
   });
 
-  it('validates event names and target categories',async()=>{
-    expect((await POST(request({event:'invented_event'}))).status).toBe(400);
-    expect((await POST(request({event:'share',target:'private@example.com'}))).status).toBe(400);
-    expect(mocks.create).not.toHaveBeenCalled();
+  it('rejects arbitrary event/source labels and all extra identifying fields',async()=>{
+    for(const body of [
+      {event:'page_view:/?email=private@example.test',source:'direct'},
+      {event:'challenge_view:PrivateChild',source:'wa'},
+      {event:'page_view:/',source:'family-identifier'},
+      {event:'page_view:/',source:'direct',referralCode:'unique-link'},
+      {event:'page_view:/',source:'direct',email:'private@example.test'},
+      {event:'page_view:/',source:'direct',sessionId:'unique-session'},
+      {event:'page_view:/',source:'direct',medium:'social'},
+    ])expect((await POST(request(body))).status).toBe(400);
+    expect(mocks.transaction).not.toHaveBeenCalled();
   });
 
-  it('records explicit funnel starts, finishes and compatible App Store clicks, but not client-forged waitlist signups',async()=>{
-    for(const [event,type] of [
-      ['challenge_start','CHALLENGE_START'],
-      ['challenge_complete','CHALLENGE_COMPLETE'],
-      ['app_store_click','STORE_CLICK'],
-    ]){
-      expect((await POST(request({event,slug:'shadow-signal',source:'tiktok',medium:'social',campaign:'launch',content:'shadow_a'}))).status).toBe(200);
-      expect(mocks.create).toHaveBeenLastCalledWith({data:{
-        type,challengeId:'challenge-id',target:undefined,source:'tiktok',medium:'social',campaign:'launch',content:'shadow_a',
-      }});
-    }
-    expect((await POST(request({event:'android_waitlist_signup'}))).status).toBe(400);
-  });
-
-  it('applies the existing database-backed analytics limit',async()=>{
-    mocks.rateLimit.mockResolvedValue(false);
-    expect((await POST(request({event:'page_view'}))).status).toBe(200);
-    expect(mocks.create).not.toHaveBeenCalled();
-  });
-
-  it('stores sanitized aggregate attribution without private token or email values',async()=>{
-    const response=await POST(request({
-      event:'challenge_view',
-      slug:'shadow-signal',
-      source:'tiktok',
-      medium:'organic_social',
-      campaign:'roama_signal_quest_launch',
-      content:'shadow_wall_creature_a',
-      referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
-      target:'challenge_link_share',
-      email:'adult@example.com',
-      token:'b'.repeat(64),
-      childName:'Private Child Name',
-    }));
+  it('atomically increments only event/date/source and creates no IP-keyed rate bucket or cookie',async()=>{
+    const response=await POST(request({event:'challenge_start:shadow-signal',source:'wa'},{'user-agent':'Do not store','cf-connecting-ip':'192.0.2.1'}));
+    const key={event:'challenge_start:shadow-signal',date:new Date('2026-11-20T00:00:00Z'),source:'wa'};
     expect(response.status).toBe(200);
-    expect(mocks.challengeFindFirst).toHaveBeenCalledWith({where:{slug:'shadow-signal',status:'PUBLISHED'},select:{id:true}});
-    expect(mocks.create).toHaveBeenCalledWith({data:{
-      type:'CHALLENGE_VIEW',
-      challengeId:'challenge-id',
-      source:'tiktok',
-      medium:'organic_social',
-      campaign:'roama_signal_quest_launch',
-      content:'shadow_wall_creature_a',
-      referralCode:'e9d8c221-b899-47fc-9dc7-9e03ebfd12de',
-      target:'challenge_link_share',
-    }});
-    const privateValue='adult@example.com';
-    const token='a'.repeat(64);
-    mocks.create.mockClear();
-    await POST(request({event:'page_view',source:privateValue,campaign:token}));
-    expect(mocks.create).toHaveBeenCalledWith({data:{
-      type:'PAGE_VIEW',
-      challengeId:undefined,
-      target:undefined,
-    }});
-    expect(JSON.stringify(mocks.create.mock.calls)).not.toContain(privateValue);
-    expect(JSON.stringify(mocks.create.mock.calls)).not.toContain(token);
-    expect(JSON.stringify(mocks.create.mock.calls)).not.toContain('Private Child Name');
+    expect(await response.json()).toEqual({ok:true});
+    expect(response.headers.has('set-cookie')).toBe(false);
+    expect(mocks.upsert).toHaveBeenCalledWith({where:{event_date_source:key},create:{...key,count:1},update:{count:{increment:1}},select:{count:true}});
+    expect(mocks.deleteMany).toHaveBeenCalledWith({where:{date:{lt:new Date('2026-10-22T00:00:00Z')}}});
+    expect(mocks.abuseKey).not.toHaveBeenCalled();
+    expect(JSON.stringify(mocks.upsert.mock.calls)).not.toMatch(/Do not store|192.0.2.1|referral|createdAt|session|userAgent/i);
+  });
+
+  it('uses UTC date boundaries and retains at most 30 calendar days',()=>{
+    expect(analyticsDay(new Date('2026-11-21T00:01:00+03:00')).toISOString()).toBe('2026-11-20T00:00:00.000Z');
+    expect(analyticsCutoff(new Date('2026-11-20T23:59:59Z')).toISOString()).toBe('2026-10-22T00:00:00.000Z');
+    expect(analyticsCutoff(new Date('2026-11-21T00:00:00Z')).toISOString()).toBe('2026-10-23T00:00:00.000Z');
+  });
+
+  it('surfaces database errors instead of claiming a count was recorded',async()=>{
+    const error=vi.spyOn(console,'error').mockImplementation(()=>{});
+    mocks.transaction.mockRejectedValue(new Error('database unavailable'));
+    try {
+      expect((await POST(request({event:'app_store_click',source:'direct'}))).status).toBe(503);
+      expect(error).toHaveBeenCalled();
+    } finally {error.mockRestore();}
   });
 });

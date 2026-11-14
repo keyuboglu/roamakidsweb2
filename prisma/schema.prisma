@@ -148,6 +148,16 @@ model RateLimitBucket {
   @@index([windowStart])
 }
 
+model AnonymousDailyCount {
+  event  String   @db.VarChar(100)
+  date   DateTime @db.Date
+  source String   @db.VarChar(20)
+  count  Int      @default(0)
+
+  @@id([event, date, source])
+  @@index([date])
+}
+
 model AndroidWaitlist {
   id                 String   @id @default(cuid())
   emailHash          String   @unique @db.Char(64)
