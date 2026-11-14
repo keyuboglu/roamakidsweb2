@@ -43,7 +43,8 @@ describe.skipIf(!enabled)('PostgreSQL completion registration',()=>{let challeng
   expect(response.status).toBe(200);
   const data=await response.json();
   expect(data.stars.length).toBeLessThanOrEqual(2500);
-  expect(data.stars.find((item:{starNumber:number})=>item.starNumber===star.starNumber)).toEqual({starNumber:star.starNumber,starName:'Public Explorer'});
+  expect(data.stars.find((item:{starNumber:number})=>item.starNumber===star.starNumber)).toEqual({starNumber:star.starNumber,starName:'Public Explorer',greatSignal:false});
+  expect(JSON.stringify(data)).not.toMatch(/adultEmailHash|countryCode|emailVerifiedAt|test-private-hash/);
   const overview=await (await getStars(new NextRequest('https://roama.test/api/stars'))).json();
   expect(overview.capacity).toBe(1000000);
   expect(overview.tiles.length).toBeLessThanOrEqual(400);
