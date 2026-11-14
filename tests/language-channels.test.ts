@@ -60,6 +60,8 @@ describe('separate public language channels',()=>{
     }
     const map=render('tr',createElement(StarMap));
     expect(map).toContain('Bir yıldız bul');
+    expect(map).toContain('Büyük İşaret 2026');
+    expect(map).not.toContain('The Great Signal 2026');
     expect(map).not.toContain('Find a star');
     expect(map).not.toContain('Privacy information');
     const verify=render('tr',createElement(VerifyEmail));
