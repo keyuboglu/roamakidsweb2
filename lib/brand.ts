@@ -10,4 +10,5 @@ export function appStoreUrl(campaign='signalquest') {
 }
 export const OFFICIAL_IOS_STORE_URL=appStoreUrl();
 // Android package from the ROAMA Kids app (expo.android.package); Google Play listing live since 17 Nov 2026.
-export const GOOGLE_PLAY_URL='https://play.google.com/store/apps/details?id=com.roama.kids';
+// Install referrer: utm_source and utm_campaign carry the Signal Quest code; no utm_medium (roama-kids/claude/play-utm-linkleri.md §2).
+export const GOOGLE_PLAY_URL='https://play.google.com/store/apps/details?id=com.roama.kids&referrer=utm_source%3Dsignalquest%26utm_campaign%3Dsignalquest';

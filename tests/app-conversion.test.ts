@@ -20,7 +20,7 @@ describe('app store and grown-up challenge sharing',()=>{
   it('renders the App Store button and the official Google Play badge',()=>{
     const markup=render('en',createElement(AppDownloadCTA));
     expect(markup).toContain('Continue the Adventure on the App Store');
-    expect(markup).toContain('https://play.google.com/store/apps/details?id=com.roama.kids');
+    expect(markup).toContain('https://play.google.com/store/apps/details?id=com.roama.kids&amp;referrer=utm_source%3Dsignalquest%26utm_campaign%3Dsignalquest');
     expect(markup).toContain('/badges/google-play-badge-en.png');
     expect(markup).toContain('Google Play and the Google Play logo are trademarks of Google LLC.');
     expect(markup).not.toContain('Coming soon');
