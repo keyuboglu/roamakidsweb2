@@ -2,7 +2,7 @@ import {NextResponse} from 'next/server';
 import {prisma} from '@/lib/prisma';
 import {STAR_CAPACITY} from '@/lib/stars';
 import {campaignChallenges,mergeCampaignChallenges} from '@/lib/challenge-content';
-import {OFFICIAL_IOS_STORE_URL} from '@/lib/brand';
+import {GOOGLE_PLAY_URL,OFFICIAL_IOS_STORE_URL} from '@/lib/brand';
 
 export const dynamic='force-dynamic';
 export async function GET() {
@@ -17,11 +17,11 @@ export async function GET() {
       configured:true,count,goal:STAR_CAPACITY,title:'ROAMA Kids · Signal Quest',
       headline:live?config?.headline:'A MILLION STARS. ONE GLOBAL QUEST.',
       description:live?config?.description:'Explore the real world, complete a challenge, and earn your star in the ROAMA Kids universe.',
-      milestones:config?.milestones??[],iosStoreUrl:OFFICIAL_IOS_STORE_URL,androidStoreUrl:null,
+      milestones:config?.milestones??[],iosStoreUrl:OFFICIAL_IOS_STORE_URL,androidStoreUrl:GOOGLE_PLAY_URL,
       challenges:mergeCampaignChallenges(overrides),
     },{headers:{'Cache-Control':'no-store'}});
   } catch(error) {
     console.error('Campaign database request failed.',error instanceof Error?error.message.replace(/postgres(?:ql)?:\/\/[^\s]+/g,'[redacted-database-url]'):'Unknown error');
-    return NextResponse.json({configured:false,count:null,goal:STAR_CAPACITY,iosStoreUrl:OFFICIAL_IOS_STORE_URL,androidStoreUrl:null,challenges:campaignChallenges,error:'The live star count is temporarily unavailable.'},{status:200});
+    return NextResponse.json({configured:false,count:null,goal:STAR_CAPACITY,iosStoreUrl:OFFICIAL_IOS_STORE_URL,androidStoreUrl:GOOGLE_PLAY_URL,challenges:campaignChallenges,error:'The live star count is temporarily unavailable.'},{status:200});
   }
 }

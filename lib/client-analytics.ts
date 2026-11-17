@@ -22,5 +22,5 @@ export function trackEvent(event:ClientEvent,details:EventDetails={},attribution
 }
 
 export function trackStoreClick(store:'ios'|'android',slug?:string,attribution?:Attribution) {
-  trackEvent(store==='ios'?'app_store_click':'store_click',{store,slug,target:'app_store'},attribution);
+  trackEvent(store==='ios'?'app_store_click':'store_click',{store,slug,target:store==='ios'?'app_store':'google_play'},attribution);
 }

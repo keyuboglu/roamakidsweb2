@@ -459,3 +459,8 @@ footer>div{align-items:center;font-size:11px;color:#d5dded}
   html{scroll-behavior:auto}
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+.google-play-option{display:flex;flex-direction:column;align-items:flex-start;gap:10px}
+.google-play-badge{display:inline-block;line-height:0;padding:0}
+.google-play-badge img{display:block;height:56px;width:auto;max-width:none}
+.google-play-trademark{font-size:11px;color:var(--muted)}

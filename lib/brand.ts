@@ -9,3 +9,5 @@ export function appStoreUrl(campaign='signalquest') {
   return url.toString();
 }
 export const OFFICIAL_IOS_STORE_URL=appStoreUrl();
+// Android package from the ROAMA Kids app (expo.android.package); Google Play listing live since 17 Nov 2026.
+export const GOOGLE_PLAY_URL='https://play.google.com/store/apps/details?id=com.roama.kids';

@@ -17,10 +17,13 @@ describe('app store and grown-up challenge sharing',()=>{
     expect(appStoreUrl('signalquest_complete')).toBe('https://apps.apple.com/app/apple-store/id6815158079?pt=129427648&ct=signalquest_complete&mt=8');
   });
 
-  it('renders the App Store destination immediately while retaining the adult Android waitlist',()=>{
+  it('renders the App Store button and the official Google Play badge',()=>{
     const markup=render('en',createElement(AppDownloadCTA));
     expect(markup).toContain('Continue the Adventure on the App Store');
-    expect(markup).toContain('Coming soon to Google Play');
+    expect(markup).toContain('https://play.google.com/store/apps/details?id=com.roama.kids');
+    expect(markup).toContain('/badges/google-play-badge-en.png');
+    expect(markup).toContain('Google Play and the Google Play logo are trademarks of Google LLC.');
+    expect(markup).not.toContain('Coming soon');
     expect(markup).not.toContain('type="email"');
     expect(markup).not.toContain('Loading app options');
   });
