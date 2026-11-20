@@ -73,7 +73,7 @@ export default function VerifyEmail() {
       {star.starName&&<p className="reveal-name">{star.starName}</p>}
       <p className="detail-lede">{star.recovered?t('Your existing permanent star is ready.','Mevcut kalıcı yıldızınız hazır.'):t('Your permanent star is ready.','Kalıcı yıldızınız hazır.')} {t('ROAMA Kids · Signal Quest','ROAMA Kids · Sinyal Görevi')}</p>
       <p className="reveal-tagline">{t('One world. One million places to shine.','Tek dünya. Parlamak için bir milyon yer.')}</p>
-      <p className="reveal-count">{shouldRevealStarCount(star.count)?`${star.count.toLocaleString(tr?'tr-TR':'en-US')} ${t('verified adult-email star claims','doğrulanmış yetişkin e-postasıyla alınan yıldız')}`:t('Help us light the first 100 stars','İlk 100 yıldızı yakmamıza yardım edin')}</p>
+      <p className="reveal-count">{shouldRevealStarCount(star.count)?`${star.count.toLocaleString(tr?'tr-TR':'en-US')} ${t('verified adult-email star claims','doğrulanmış yetişkin e-postasıyla alınan yıldız')}`:t('Help us light the first 100 stars','İlk 100 yıldızı yakmamıza yardım et')}</p>
       <StarCardActions starNumber={star.starNumber} starName={star.starName} attribution={star.attribution} onStatus={setNotice}/>
       {notice&&<p className="verify-notice" role="status">{notice}</p>}
       <p><Link className="text-link" href={appendAttribution(localizedPath(`/stars?star=${star.starNumber}`,language),star.attribution||{})}>{t('Find your star in the sky','Gökyüzünde yıldızınızı bulun')} →</Link></p>

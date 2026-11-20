@@ -30,7 +30,7 @@ export async function generateMetadata({params}:{params:Promise<{slug:string}>})
  const canonical=languageAlternates(`/challenge/${slug}`,language).canonical;
  const image=`/og-${slug}${language==='tr'?'-tr':''}.png`;
  const title=`${language==='tr'?'ROAMA Kids · Sinyal Görevi':'ROAMA Kids · Signal Quest'} | ${translation?.title||challenge.title}`;
- const description=translation?`${translation.description} 6–12 yaş çocuklar ve aileler için ücretsiz, ekransız bir görev. Uygulama, fotoğraf veya kayıt gerekmez.`:challenge.seoDescription;
+ const description=translation?`${translation.description} 6–12 yaş çocuklar ve aileler için ücretsiz, uygulamasız bir görev. Fotoğraf veya kayıt gerekmez.`:challenge.seoDescription;
  return {
   title,
   description,

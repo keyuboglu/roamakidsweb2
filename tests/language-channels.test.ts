@@ -38,15 +38,15 @@ describe('separate public language channels',()=>{
     const initialData={configured:true,count:2,goal:1000000,headline:'A MILLION STARS. ONE GLOBAL QUEST.',description:'English-only admin description',milestones:[{threshold:100,label:'First light'}],challenges:[...campaignChallenges]};
     const tr=render('tr',createElement(Quest,{initialData}));
     expect(tr).toContain('BİR MİLYON YILDIZ.');
-    expect(tr).toContain('<strong>2</strong>');
-    expect(tr).not.toContain('İlk 100 yıldızı yakmamıza yardım edin');
+    expect(tr).toContain('İlk 100 yıldızı yakmamıza yardım et');
+    expect(tr).not.toContain('class="count-line"');
     expect(tr).toContain('NASIL');
     expect(tr).toContain('Gizlilik bilgileri');
     for(const text of ['English-only admin description','First light','CHOOSE YOUR ADVENTURE','For Parents','Explore the star map','LIVE COUNT','Privacy information','How It Works'])expect(tr).not.toContain(text);
     const en=render('en',createElement(Quest,{initialData}));
     expect(en).toContain('CHOOSE YOUR ADVENTURE');
-    expect(en).toContain('<strong>2</strong>');
-    expect(en).not.toContain('Help us light the first 100 stars');
+    expect(en).toContain('Help us light the first 100 stars');
+    expect(en).not.toContain('class="count-line"');
     expect(en).toContain('English-only admin description');
     for(const text of ['BİR MİLYON','Göreve başla','Gizlilik bilgileri','MACERANIZI SEÇİN'])expect(en).not.toContain(text);
   });
@@ -81,23 +81,25 @@ describe('separate public language channels',()=>{
     }
   });
 
-  it('shows the real verified count on the homepage, with a first-star line at zero',()=>{
-    for(const count of [0,1,2,99,100]){
+  it('keeps the count private below 100 verified stars and shows X / 1,000,000 from 100 on',()=>{
+    for(const count of [0,1,2,99,100,1234]){
       const markup=render('en',createElement(Quest,{initialData:{configured:true,count,goal:1000000,challenges:[...campaignChallenges]}}));
-      expect(markup.includes('class="count-line"')).toBe(count>0);
-      expect(markup.includes('0 stars so far · be the first')).toBe(count===0);
-      if(count>0)expect(markup).toContain(`<strong>${count}</strong>`);
-      expect(markup).not.toContain('Help us light the first 100 stars');
+      expect(markup.includes('class="count-line"')).toBe(count>=100);
+      expect(markup.includes('Help us light the first 100 stars')).toBe(count<100);
+      if(count>=100)expect(markup).toContain(`<strong>${count.toLocaleString('en-US')}</strong><span>/ 1,000,000 stars</span>`);
+      else expect(markup).not.toContain(`<strong>${count}</strong>`);
       expect(markup).not.toContain('Checking verified stars');
     }
-    const tr=render('tr',createElement(Quest,{initialData:{configured:true,count:0,goal:1000000,challenges:[...campaignChallenges]}}));
-    expect(tr).toContain('Şu ana kadar 0 yıldız · ilk siz olun');
+    const tr=render('tr',createElement(Quest,{initialData:{configured:true,count:2,goal:1000000,challenges:[...campaignChallenges]}}));
+    expect(tr).toContain('İlk 100 yıldızı yakmamıza yardım et');
   });
 
   it('server-renders a known count even before the campaign request finishes',()=>{
-    const markup=render('en',createElement(Quest,{initialData:{configured:false,count:2,goal:1000000,challenges:[...campaignChallenges]}}));
-    expect(markup).toContain('<strong>2</strong>');
+    const markup=render('en',createElement(Quest,{initialData:{configured:false,count:150,goal:1000000,challenges:[...campaignChallenges]}}));
+    expect(markup).toContain('<strong>150</strong>');
     expect(markup).not.toContain('Checking verified stars');
+    const below=render('en',createElement(Quest,{initialData:{configured:false,count:2,goal:1000000,challenges:[...campaignChallenges]}}));
+    expect(below).toContain('Help us light the first 100 stars');
   });
 
   it('keeps the goal disclaimer and uses no-app wording for groups',()=>{
@@ -116,6 +118,15 @@ describe('separate public language channels',()=>{
     expect(tr).toContain('href="/challenge/shadow-signal?lang=en"');
     expect(tr).toContain('href="/challenge/shadow-signal?lang=tr"');
     expect(tr).toContain('lang="tr" aria-current="true"');
+  });
+
+  it('uses no-app wording everywhere instead of screen-free / ekransız',async()=>{
+    const {FAMILY_CHALLENGE_MESSAGE}=await import('@/lib/funnel');
+    const {challengeShareText}=await import('@/lib/challenge-share');
+    const texts=[FAMILY_CHALLENGE_MESSAGE,...campaignChallenges.map(challenge=>JSON.stringify(challenge)),
+      challengeShareText('Shadow Signal','en'),challengeShareText('Gölge İşareti','tr'),
+      render('en',createElement(Quest)),render('tr',createElement(Quest))];
+    for(const text of texts){expect(text.toLowerCase()).not.toContain('screen-free');expect(text).not.toContain('ekransız');}
   });
 
   it('links the top bar to the Great Signal home on roama.tech in each language',()=>{

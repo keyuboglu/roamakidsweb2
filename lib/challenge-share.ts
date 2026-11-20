@@ -9,6 +9,6 @@ export function challengeShareUrl(slug:string,language:Language) {
 
 export function challengeShareText(title:string,language:Language) {
   return language==='tr'
-    ?`Ailece ${title} görevini yaptık — 6–12 yaş için ücretsiz, ekransız bir görev`
-    :`We just did ${title} — a free screen-free challenge for 6–12s`;
+    ?`Ailece ${title} görevini yaptık — 6–12 yaş için ücretsiz, uygulamasız bir görev`
+    :`We just did ${title} — a free no-app challenge for 6–12s`;
 }

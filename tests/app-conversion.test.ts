@@ -43,7 +43,7 @@ describe('app store and grown-up challenge sharing',()=>{
     expect(url.pathname).toBe('/challenge/shadow-signal');
     expect(url.searchParams.get('lang')).toBe('en');
     expect(url.searchParams.get('utm_source')).toBe('share');
-    expect(challengeShareText('Shadow Signal','en')).toBe('We just did Shadow Signal — a free screen-free challenge for 6–12s');
+    expect(challengeShareText('Shadow Signal','en')).toBe('We just did Shadow Signal — a free no-app challenge for 6–12s');
     expect(challengeShareText('Gölge İşareti','tr')).toContain('6–12 yaş');
   });
 });

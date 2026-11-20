@@ -33,7 +33,7 @@ describe('device and language funnel selection',()=>{
   });
 
   it('preserves the main ages 6–12 message and translates all original steps and safety guidance',()=>{
-    expect(FAMILY_CHALLENGE_MESSAGE).toBe('Three free, screen-free family challenges for kids ages 6–12. No app, photos or sign-up needed.');
+    expect(FAMILY_CHALLENGE_MESSAGE).toBe('Three free no-app family challenges for kids ages 6–12. No photos or sign-up needed.');
     expect(Object.keys(turkishChallenges).sort()).toEqual(campaignChallenges.map(challenge=>challenge.slug).sort());
     for(const challenge of campaignChallenges){
       const translated=turkishChallenges[challenge.slug];

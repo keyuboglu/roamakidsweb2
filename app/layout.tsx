@@ -30,7 +30,7 @@ export async function generateMetadata():Promise<Metadata> {
   const tr=await serverLanguage()==='tr';
   if(!tr)return englishMetadata;
   const title='ROAMA Kids · Sinyal Görevi | Çocuklar ve Aileler İçin Yaratıcı Görevler';
-  const description='6–12 yaş çocuklar için üç ücretsiz, ekransız aile görevi. Uygulama, fotoğraf veya kayıt gerekmez.';
+  const description='6–12 yaş çocuklar için üç ücretsiz, uygulamasız aile görevi. Fotoğraf veya kayıt gerekmez.';
   return {...englishMetadata,title,description,
     openGraph:{title,description,type:'website',siteName:'ROAMA Kids · Sinyal Görevi',locale:'tr_TR',images:[{url:'/og-great-signal-tr.png',width:1200,height:630,alt:'ROAMA Kids · Sinyal Görevi — bir milyon yıldız ve üç yaratıcı aile görevi.'}]},
     twitter:{card:'summary_large_image',title,description,images:['/og-great-signal-tr.png']}};

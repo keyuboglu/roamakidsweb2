@@ -14,7 +14,7 @@ const homeDescription=FAMILY_CHALLENGE_MESSAGE;
 export async function generateMetadata():Promise<Metadata>{
  const language=await serverLanguage();
  const title=language==='tr'?'ROAMA Kids · Sinyal Görevi | Çocuklar ve Aileler İçin Yaratıcı Görevler':homeTitle;
- const description=language==='tr'?'6–12 yaş çocuklar için üç ücretsiz, ekransız aile görevi. Uygulama, fotoğraf veya kayıt gerekmez.':homeDescription;
+ const description=language==='tr'?'6–12 yaş çocuklar için üç ücretsiz, uygulamasız aile görevi. Fotoğraf veya kayıt gerekmez.':homeDescription;
  const socialImage=language==='tr'?'/og-great-signal-tr.png':'/og-great-signal.png';
  return {
   title,
@@ -42,7 +42,7 @@ export default async function Home() {
   '@context':'https://schema.org',
   '@graph':[
    {'@type':'WebSite','@id':`${origin}/#website`,url:origin,name:tr?'ROAMA Kids · Sinyal Görevi':'ROAMA Kids · Signal Quest',inLanguage:language},
-   {'@type':'WebPage','@id':`${origin}/#webpage`,url:languageAlternates('',language).canonical,name:tr?'ROAMA Kids · Sinyal Görevi | Yaratıcı Aile Görevleri':homeTitle,description:tr?'6–12 yaş çocuklar için üç ücretsiz, ekransız aile görevi. Uygulama, fotoğraf veya kayıt gerekmez.':homeDescription,inLanguage:language,isPartOf:{'@id':`${origin}/#website`}},
+   {'@type':'WebPage','@id':`${origin}/#webpage`,url:languageAlternates('',language).canonical,name:tr?'ROAMA Kids · Sinyal Görevi | Yaratıcı Aile Görevleri':homeTitle,description:tr?'6–12 yaş çocuklar için üç ücretsiz, uygulamasız aile görevi. Fotoğraf veya kayıt gerekmez.':homeDescription,inLanguage:language,isPartOf:{'@id':`${origin}/#website`}},
   ],
  };
  return <><script type="application/ld+json" dangerouslySetInnerHTML={{__html:serializeJsonLd(structuredData)}}/><Quest initialData={initialCampaign}/></>;

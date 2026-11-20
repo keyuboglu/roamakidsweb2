@@ -30,7 +30,7 @@ export const campaignChallenges=[
     title:'Shadow Signal',
     shortDescription:'Make a shadow signal with your hands, then listen to the night with a grown-up.',
     description:'Try The Great Signal mission from ROAMA Kids: shine a light on a wall with a grown-up, make a shadow signal with your hands, then turn off the light and listen to the night for one minute.',
-    seoDescription:'ROAMA Kids · Shadow Signal: a free screen-free activity for ages 6–12. With a grown-up, make a hand shadow, turn off the light and listen to the night for one minute.',
+    seoDescription:'ROAMA Kids · Shadow Signal: a free no-app activity for ages 6–12. With a grown-up, make a hand shadow, turn off the light and listen to the night for one minute.',
     estimatedTime:'No set time; take it at your own pace.',
     materials:'A safe light, a wall and a grown-up.',
     ageGuidance:{
@@ -56,7 +56,7 @@ export const campaignChallenges=[
     title:'The Micro-World Safari',
     shortDescription:'What if you looked a little closer?',
     description:'Discover an extraordinary world hidden in something ordinary.',
-    seoDescription:'A screen-free nature discovery activity for kids ages 6–12. Explore a clean leaf or everyday object up close, make a guess, and reveal its tiny world without special equipment.',
+    seoDescription:'A no-app nature discovery activity for kids ages 6–12. Explore a clean leaf or everyday object up close, make a guess, and reveal its tiny world without special equipment.',
     estimatedTime:'No set time; take it at your own pace.',
     materials:'A safe, clean everyday object or detail. A camera or paper for drawing is optional.',
     ageGuidance:{
@@ -84,7 +84,7 @@ export const campaignChallenges=[
     title:'The Gravity Defier',
     shortDescription:'Can you balance three objects in a way that looks impossible?',
     description:'Make ordinary objects do something unexpected.',
-    seoDescription:'A screen-free balancing activity for kids ages 6–12 and families. Arrange three safe, lightweight household objects and see if your surprising stack stands for three seconds.',
+    seoDescription:'A no-app balancing activity for kids ages 6–12 and families. Arrange three safe, lightweight household objects and see if your surprising stack stands for three seconds.',
     estimatedTime:'No set time; take it at your own pace.',
     materials:'Three safe, lightweight household objects and a low, steady surface.',
     ageGuidance:{

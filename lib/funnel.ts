@@ -1,7 +1,7 @@
 export type Language='en'|'tr';
 export type Device='ios'|'android'|'desktop';
 
-export const FAMILY_CHALLENGE_MESSAGE='Three free, screen-free family challenges for kids ages 6–12. No app, photos or sign-up needed.';
+export const FAMILY_CHALLENGE_MESSAGE='Three free no-app family challenges for kids ages 6–12. No photos or sign-up needed.';
 
 export function detectLanguage(search:string):Language {
   const override=new URLSearchParams(search).get('lang');
