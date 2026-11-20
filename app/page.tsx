@@ -2,6 +2,7 @@ import Quest from '@/components/Quest';
 import type {Metadata} from 'next';
 import type {Campaign} from '@/components/Quest';
 import {STAR_CAPACITY} from '@/lib/stars';
+import {verifiedStarCountWithin} from '@/lib/verified-stars';
 import {campaignChallenges} from '@/lib/challenge-content';
 import {getCanonicalOrigin} from '@/lib/site-url';
 import {serializeJsonLd} from '@/lib/json-ld';
@@ -31,9 +32,10 @@ export async function generateMetadata():Promise<Metadata>{
  };
 }
 
-const initialCampaign:Campaign={configured:false,count:null,goal:STAR_CAPACITY,challenges:[...campaignChallenges]};
 export default async function Home() {
  const language=await serverLanguage();
+ // The first HTML already carries the verified count, so no visitor waits on "Checking verified stars…".
+ const initialCampaign:Campaign={configured:false,count:await verifiedStarCountWithin(1500),goal:STAR_CAPACITY,challenges:[...campaignChallenges]};
  const tr=language==='tr';
  const origin=getCanonicalOrigin();
  const structuredData={

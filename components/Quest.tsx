@@ -11,7 +11,6 @@ import {useLanguage} from '@/components/FunnelPreferences';
 import {FAMILY_CHALLENGE_MESSAGE,localizedPath} from '@/lib/funnel';
 import {turkishChallenges} from '@/lib/challenge-translations';
 import {challengeDisplayArtwork} from '@/lib/challenge-content';
-import {shouldRevealStarCount} from '@/lib/stars';
 import GreatSignalInvitation from '@/components/GreatSignalInvitation';
 
 type Challenge={slug:string;title:string;shortDescription:string;instructions?:string;duration?:string|null;safety?:string;imageUrl?:string|null};
@@ -22,14 +21,20 @@ function useCampaign(initial:Campaign) {
   const [data,setData]=useState(initial);
   const [status,setStatus]=useState<'loading'|'ready'|'error'>(initial.configured?'ready':'loading');
   const refresh=useCallback(async()=>{
+    // Never leave the counter on "Checking…": a request that hangs is cancelled after 10 s and shows the error state.
+    const controller=new AbortController();
+    const timeout=window.setTimeout(()=>controller.abort(),10000);
     try {
-      const response=await fetch('/api/campaign',{cache:'no-store'});
+      const response=await fetch('/api/campaign',{cache:'no-store',signal:controller.signal});
       if(!response.ok)throw new Error('Campaign data unavailable.');
       const campaign=await response.json() as Campaign;
-      setData(campaign);
+      // A database hiccup keeps the last verified count on screen instead of replacing it with nothing.
+      setData(previous=>campaign.configured?campaign:{...campaign,count:previous.count});
       setStatus(campaign.configured?'ready':'error');
     } catch {
       setStatus('error');
+    } finally {
+      clearTimeout(timeout);
     }
   },[]);
   useEffect(()=>{
@@ -47,7 +52,6 @@ function Stars() {
 export default function Quest({initialData=empty}:{initialData?:Campaign}) {
   const {data,status,refresh}=useCampaign(initialData);
   const count=data.count;
-  const firstLight=count!==null&&!shouldRevealStarCount(count);
   const progress=count===null?0:Math.min(count/data.goal*100,100);
   const language=useLanguage();
   const tr=language==='tr';
@@ -155,13 +159,13 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
     <section className="counter-section" aria-labelledby="counter-title">
       <div className="counter-intro"><p className="eyebrow">{t('OUR SHARED JOURNEY','ORTAK YOLCULUĞUMUZ')}</p><h2 id="counter-title">{t('Every discovery','Her keşif')}<br/>{t('leaves a little light.','küçük bir ışık bırakır.')}</h2><p>{t('Only completed challenges with a verified adult organizer email are counted as permanent stars.','Yalnızca yetişkin düzenleyicinin e-postası doğrulanan tamamlanmış görevler kalıcı yıldız olarak sayılır.')}</p><Link className="counter-map-link" href={localizedPath('/stars',language)}>{t('See the million-star sky','Bir milyon yıldızlık gökyüzünü gör')} ↗</Link></div>
       <div className="counter-card"><div className="counter-head"><span>{t('VERIFIED ADULT STAR CLAIMS','DOĞRULANMIŞ YETİŞKİN YILDIZ TALEPLERİ')}</span><span className="live"><i/> {status==='loading'?t('UPDATING','GÜNCELLENİYOR'):t('LIVE COUNT','CANLI SAYI')}</span></div>
-        {firstLight
-          ?<p className="first-light-copy" aria-live="polite">{t('Help us light the first 100 stars','İlk 100 yıldızı yakmamıza yardım edin')}</p>
+        {count===0
+          ?<p className="first-light-copy" aria-live="polite">{t('0 stars so far · be the first','Şu ana kadar 0 yıldız · ilk siz olun')}</p>
           :count!==null
             ?<><div className="count-line" aria-live="polite" aria-atomic="true"><strong>{count.toLocaleString(locale)}</strong><span>/ {data.goal.toLocaleString(locale)} {t('stars','yıldız')}</span></div><div className="progress-track" role="progressbar" aria-label={t('Verified adult-email star claims toward the campaign target','Kampanya hedefine doğru doğrulanmış yetişkin yıldız talepleri')} aria-valuemin={0} aria-valuemax={data.goal} aria-valuenow={Math.min(count,data.goal)}><span style={{width:`${progress}%`}}/></div><div className="progress-label"><span>{tr?`HEDEFİMİZİN %${progress.toLocaleString(locale,{minimumFractionDigits:progress<1?2:1,maximumFractionDigits:progress<1?2:1})}`:`${progress.toFixed(progress<1?2:1)}% OF OUR GOAL`}</span><span>{data.goal.toLocaleString(locale)}</span></div></>
             :<p className="count-unavailable" role="status">{status==='loading'?t('Checking verified stars…','Doğrulanmış yıldızlar kontrol ediliyor…'):t('Verified star count temporarily unavailable','Doğrulanmış yıldız sayısı şu anda alınamıyor')}</p>}
         {status==='error'&&<button className="retry" onClick={()=>void refresh()}>{t('Try again','Tekrar dene')}</button>}
-        <div className="mini-constellation" aria-hidden="true">{Array.from({length:firstLight?(count||0):28},(_,index)=><span key={index} style={{left:`${(index*37+9)%97}%`,top:`${(index*23+14)%80}%`,opacity:index<(firstLight?(count||0):Math.round(progress/100*28))?0.82:0.08}}/>)}<div className="mini-message">{firstLight?t('A first light in the star map.','Yıldız haritasında ilk ışık.'):t('A constellation','Bir takımyıldız')}<br/>{!firstLight&&t('in the making.','doğuyor.')}</div></div><p className="count-foot">{t('One permanent star per verified adult email. No visits or unverified submissions are counted.','Her doğrulanmış yetişkin e-postasına bir kalıcı yıldız. Ziyaretler veya doğrulanmamış başvurular sayılmaz.')}</p></div>
+        <div className="mini-constellation" aria-hidden="true">{Array.from({length:28},(_,index)=><span key={index} style={{left:`${(index*37+9)%97}%`,top:`${(index*23+14)%80}%`,opacity:index<Math.min(count??0,28)?0.82:0.08}}/>)}<div className="mini-message">{t('A constellation','Bir takımyıldız')}<br/>{t('in the making.','doğuyor.')}</div></div><p className="count-foot">{t('One permanent star per verified adult email. No visits or unverified submissions are counted.','Her doğrulanmış yetişkin e-postasına bir kalıcı yıldız. Ziyaretler veya doğrulanmamış başvurular sayılmaz.')}</p></div>
     </section>
     <section className="parent-section" id="parents" aria-labelledby="parents-heading">
       <div className="parent-visual"><Image src="/roama-logo.webp" alt={t('Official ROAMA Kids logo','Resmî ROAMA Kids logosu')} width={192} height={192} unoptimized/><span className="parent-visual-star" aria-hidden="true">✦</span><span className="parent-visual-caption">{t('CURIOUS TOGETHER','BİRLİKTE MERAK EDİN')}</span></div>
@@ -170,7 +174,7 @@ export default function Quest({initialData=empty}:{initialData?:Campaign}) {
     <section className="teacher-section" id="teachers" aria-labelledby="teachers-heading">
       <div>
         <p className="eyebrow">{t('FOR TEACHERS & CLUBS','ÖĞRETMENLER VE KULÜPLER İÇİN')}</p>
-        <h2 id="teachers-heading">{t('Bring screen-free discovery to your group.','Grubunuzla ekransız keşifler yapın.')}</h2>
+        <h2 id="teachers-heading">{t('Bring no-app discovery to your group.','Grubunuzla uygulamasız keşifler yapın.')}</h2>
         <p>{t('Three practical, grown-up-led activities for ages 6–12, designed for families, classrooms and clubs. Choose a challenge, use everyday materials and explore together.','Aileler, sınıflar ve kulüpler için tasarlanmış, 6–12 yaşa yönelik üç uygulamalı ve yetişkin eşliğinde etkinlik. Bir görev seçin, günlük malzemeleri kullanın ve birlikte keşfedin.')}</p>
         <p>{t('No student account, name, email or other student data is requested or needed.','Öğrenci hesabı, adı, e-postası veya başka bir öğrenci verisi istenmez ya da gerekmez.')}</p>
       </div>

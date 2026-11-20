@@ -464,3 +464,8 @@ footer>div{align-items:center;font-size:11px;color:#d5dded}
 .google-play-badge{display:inline-block;line-height:0;padding:0}
 .google-play-badge img{display:block;height:56px;width:auto;max-width:none}
 .google-play-trademark{font-size:11px;color:var(--muted)}
+/* Great Signal strip in the top language bar (roama.tech/great-signal). */
+.signal-strip{margin-right:auto;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#c0c6d0;font-size:12px;letter-spacing:.02em}.signal-strip>span:first-child{color:var(--gold);font-weight:600}.signal-strip u{text-underline-offset:3px;text-decoration-color:rgba(231,195,116,.6)}.signal-strip:hover,.signal-strip:hover u{color:var(--gold)}.signal-strip:focus-visible{outline:2px solid var(--gold);outline-offset:2px}.signal-strip-short{display:none}
+@media(max-width:760px){.signal-strip-long{display:none}.signal-strip-short{display:inline}.language-label{display:none}}
+@media(max-width:380px){.language-bar{padding:0 12px;gap:8px}.language-bar a{padding:7px 8px}.signal-strip{font-size:11px}}
+.language-bar .signal-strip{padding:7px 0;border:0}

@@ -3,6 +3,7 @@
 import {usePathname} from 'next/navigation';
 import {useLanguage} from '@/components/FunnelPreferences';
 import {localizedPath,type Language} from '@/lib/funnel';
+import GreatSignalStrip from '@/components/GreatSignalStrip';
 
 export default function LanguageSwitch() {
   const language=useLanguage();
@@ -14,7 +15,8 @@ export default function LanguageSwitch() {
   }
 
   return <div className="language-bar">
-    <span>{language==='tr'?'Dil':'Language'}</span>
+    <GreatSignalStrip/>
+    <span className="language-label">{language==='tr'?'Dil':'Language'}</span>
     <nav aria-label={language==='tr'?'Dil seçimi':'Language selection'}>
       <a href={localizedPath(pathname,'tr')} lang="tr" aria-current={language==='tr'?'true':undefined} onClick={event=>preserveUrl(event,'tr')}>Türkçe</a>
       <a href={localizedPath(pathname,'en')} lang="en" aria-current={language==='en'?'true':undefined} onClick={event=>preserveUrl(event,'en')}>English</a>

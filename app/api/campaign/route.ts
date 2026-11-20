@@ -1,6 +1,7 @@
 import {NextResponse} from 'next/server';
 import {prisma} from '@/lib/prisma';
 import {STAR_CAPACITY} from '@/lib/stars';
+import {verifiedStars} from '@/lib/verified-stars';
 import {campaignChallenges,mergeCampaignChallenges} from '@/lib/challenge-content';
 import {GOOGLE_PLAY_URL,OFFICIAL_IOS_STORE_URL} from '@/lib/brand';
 
@@ -8,7 +9,7 @@ export const dynamic='force-dynamic';
 export async function GET() {
   try {
     const [count,config,overrides]=await Promise.all([
-      prisma.completion.count({where:{status:'ACCEPTED',emailVerifiedAt:{not:null}}}),
+      verifiedStars({maxAgeMs:0}).then(snapshot=>snapshot.count),
       prisma.campaignConfig.findUnique({where:{id:1}}),
       prisma.challenge.findMany({where:{status:'PUBLISHED',slug:{in:campaignChallenges.map(challenge=>challenge.slug)}},select:{slug:true,title:true,shortDescription:true,description:true,instructions:true,safety:true,duration:true,imageUrl:true}}),
     ]);
