@@ -46,3 +46,50 @@ jobs:
       - run: npm test
       - run: npm run build
       - run: npm audit --audit-level=high
+
+  # Every push to main that passes verify is built for Cloudflare and deployed to the
+  # existing Worker (roama-signal-quest, signalquest.roama.tech). Runtime secrets stay in
+  # the Worker; the build needs none (all pages are dynamic). Needs the repository secret
+  # CLOUDFLARE_API_TOKEN (Workers Scripts: Edit, Workers Routes: Edit on roama.tech).
+  deploy:
+    needs: verify
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    runs-on: ubuntu-latest
+    environment: production
+    timeout-minutes: 30
+    concurrency:
+      group: signal-quest-production
+      cancel-in-progress: false
+    env:
+      CLOUDFLARE_ACCOUNT_ID: 2039b56d3308abe766686913d829ff2f
+      CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+      # Placeholder so Prisma can load at build time; never a real database.
+      DATABASE_URL: postgresql://none:none@127.0.0.1:1/none
+    steps:
+      - name: Require the Cloudflare token
+        run: |
+          if [ -z "$CLOUDFLARE_API_TOKEN" ]; then
+            echo "::error::Repository secret CLOUDFLARE_API_TOKEN is missing; nothing was published."
+            exit 1
+          fi
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npx --yes npm@11.19.0 ci
+      - name: Record the rollback target
+        run: |
+          { echo "### Before this deploy (rollback target)"; echo '```'; npx wrangler deployments list 2>&1 | tail -12; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+      - name: Build and deploy
+        run: |
+          set -o pipefail
+          npm run cf:deploy 2>&1 | tee /tmp/deploy.log
+      - name: Summary and live check
+        run: |
+          { echo "### Deployed $GITHUB_SHA"; echo '```'; grep -iE "version id|deployed|uploaded" /tmp/deploy.log | tail -5; echo '```'; } >> "$GITHUB_STEP_SUMMARY"
+          sleep 15
+          for url in "https://signalquest.roama.tech/?lang=en" "https://signalquest.roama.tech/api/verified-stars"; do
+            code=$(curl -s -o /dev/null -w "%{http_code}" "$url")
+            echo "$url $code"; [ "$code" = 200 ] || exit 1
+          done
